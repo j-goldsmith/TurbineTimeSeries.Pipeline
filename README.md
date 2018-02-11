@@ -21,7 +21,6 @@ pip install git+ssh://<username>@github.com/j-goldsmith/TurbineTimeSeries.git --
 Run an upgrade after any changes made to /TurbineTimeSeries. Notebook kernels must be restarted afterwards. 
 
 ### Usage
-**default config points to SDSC hosted data sources**
 ```python
 from TurbineTimeSeries import tasks
 tasks.sql_insert_anonymized_data('.config')
