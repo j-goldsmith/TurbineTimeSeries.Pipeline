@@ -16,7 +16,7 @@ pip install git+ssh://git@github.com/j-goldsmith/TurbineTimeSeries.git
 ```
 pip install . --upgrade
 
-pip install git+ssh://<username>@github.com/j-goldsmith/TurbineTimeSeries.git --upgrade
+pip install git+ssh://git@github.com/j-goldsmith/TurbineTimeSeries.git --upgrade
 ```
 Run an upgrade after any changes made to /TurbineTimeSeries. Notebook kernels must be restarted afterwards. 
 
