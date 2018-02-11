@@ -7,10 +7,10 @@ cd TurbineTimeSeries
 pip install .
 ```
 #### Alternative Install
-Not working...TODO
 ```
-pip install git+ssh://<username>@github.com/j-goldsmith/TurbineTimeSeries.git
+pip install git+ssh://git@github.com/j-goldsmith/TurbineTimeSeries.git
 ```
+*note: always use 'git' user in url, not your actual username. auth is by ssh key.
 
 ### Upgrade
 ```
