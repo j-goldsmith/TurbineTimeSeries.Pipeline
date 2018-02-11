@@ -6,7 +6,8 @@ git clone https://github.com/j-goldsmith/TurbineTimeSeries.git
 cd TurbineTimeSeries
 pip install .
 ```
-#### Alternative Tnstall
+#### Alternative Install
+Not working...TODO
 ```
 pip install git+ssh://<username>@github.com/j-goldsmith/TurbineTimeSeries.git
 ```
