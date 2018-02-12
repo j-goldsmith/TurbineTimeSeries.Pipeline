@@ -15,7 +15,7 @@ class SqlImport:
             self.sql = create_engine(self.config['postgres_connection_url'])
 
     def _psn_from_file_path(self, file_path):
-        r = re.compile('(psn|PSN)_([0-9]+)_.+csv')
+        r = re.compile('psn_([0-9]+)_.+csv')
         psn = r.findall(file_path)
 
         return int(psn[0]) if len(psn) > 0 else None
