@@ -1,4 +1,4 @@
-pip install awscli
+#!/bash
 
 # Go to Home Directory
 # Test if ~ works on windows
