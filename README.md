@@ -26,5 +26,10 @@ from TurbineTimeSeries import tasks
 tasks.sql_insert_anonymized_data('.config')
 ```
 
+```s3 command line 
+# Show contents of s3 buckets
+aws s3 ls
+```
+
 ## Other Repo
 [Anomaly Detection](https://github.com/mGalarnyk/AnomalyDetectionMachineData)
