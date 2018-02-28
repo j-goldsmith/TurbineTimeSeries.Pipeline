@@ -25,3 +25,6 @@ Run an upgrade after any changes made to /TurbineTimeSeries. Notebook kernels mu
 from TurbineTimeSeries import tasks
 tasks.sql_insert_anonymized_data('.config')
 ```
+
+## Other Repo
+[Anomaly Detection](https://github.com/mGalarnyk/AnomalyDetectionMachineData)
