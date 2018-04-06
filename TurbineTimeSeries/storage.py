@@ -1,10 +1,14 @@
 from .config import _load_config
-import csv
 import glob
 import re
 import pandas as pd
 from sqlalchemy import create_engine
+from sqlalchemy.inspection import inspect
 from sqlalchemy.sql.elements import quoted_name
+import os
+import pickle
+from hashlib import sha1
+import datetime
 
 
 class SqlImport:
@@ -68,19 +72,70 @@ class SqlImport:
                     if_exists='append',
                     index=False)
 
-class MachineDataQuery:
-    def __init__(self,sql, model, timespan):
+
+class QueryCache:
+    def __init__(self, ttl=43200):
+        self._dir = '.cache'
+        self._ttl = ttl
+
+        if not os.path.exists(self._dir):
+            os.makedirs(self._dir)
+
+    def _clear_cache(self):
+        for the_file in os.listdir(self._dir):
+            file_path = os.path.join(self._dir, the_file)
+            try:
+                if os.path.isfile(file_path):
+                    os.unlink(file_path)
+            except Exception as e:
+                print(e)
+
+    def _search_cache(self, query):
+        query_path = os.path.join(self._dir, str(sha1(query.encode('utf-8')).hexdigest()))
+
+        if not os.path.isfile(query_path):
+            return None
+
+        cached = pickle.load(open(query_path, 'rb'))
+
+        if (
+            ('timestamp' not in cached.keys())
+            or ('response' not in cached.keys())
+            or (cached['timestamp'] + datetime.timedelta(0, 0, self._ttl) >= datetime.datetime.now())
+        ):
+            os.remove(query_path)
+            return None
+
+        return cached['response']
+
+    def _cache(self, query, response):
+        query_path = os.path.join(self._dir, str(sha1(query.encode('utf-8')).hexdigest()))
+        if os.path.isfile(query_path):
+            os.remove(query_path)
+
+        cache_obj = {
+            'timestamp': datetime.datetime.now(),
+            'response': response
+        }
+
+        pickle.dump(cache_obj, open(query_path, 'wb'))
+
+
+class MachineDataQuery (QueryCache):
+    def __init__(self, sql, model, sample_freq):
         if model not in [1, 2]:
             raise Exception('Invalid model number')
-        if timespan not in ['1h', '10m']:
-            raise Exception('Invalid timespan')
+        if sample_freq not in ['1hr', '10min']:
+            raise Exception('Invalid time span,'+ sample_freq+'. \'1hr\' and \'10min\' allowed')
+
+        QueryCache.__init__(self)
 
         self.sql = sql
         self.model = model
-        self.timespan = timespan
+        self.sample_freq = sample_freq
 
-        self.not_null = []
-        self.psn = []
+        self._not_null = []
+        self._psn = []
 
         self.timerange = {
             min:None,
@@ -89,14 +144,22 @@ class MachineDataQuery:
 
         self.selected_col = []
 
+        self.q = None
+        self.resultsFromCache = None
+
     def not_null(self,col):
-        self.not_null.append(col)
+        if col is list:
+            self._not_null.extend(col)
+        elif col is str:
+            self._not_null.append(col)
 
         return self
 
     def psn(self,val):
-        self.psn.append(val)
-
+        if val is list:
+            self._psn.extend(val)
+        else:
+            self._psn.append(str(val))
         return self
 
     def min_time(self,val):
@@ -110,13 +173,66 @@ class MachineDataQuery:
         return self
 
     def select(self,col):
-        self.selected_col.append(col)
+        if col is list:
+            self.selected_col.extend(col)
+        elif col is str:
+            self.selected_col.append(col)
 
         return self
 
-    def execute(self):
+    def _build_where_clause(self):
+        clauses = []
 
-        pass
+        if self._not_null:
+            clauses.extend(['{} IS NOT NULL'.format(c) for c in self._not_null])
+
+        if self._psn:
+            clauses.append('psn in ({})'.format(','.join(self._psn)))
+
+        return 'WHERE ' + (' AND '.join(clauses)) if clauses else ''
+
+    def _build(self):
+        sql_select = 'SELECT ' + '*' if len(self.selected_col) == 0 else ','.join(self.selected_col)
+        sql_from = 'FROM ' + 'sensor_readings_model'+str(self.model)+'_'+self.sample_freq
+        sql_where = self._build_where_clause()
+
+        self.q = (
+            sql_select + ' ' +
+            sql_from + ' ' +
+            sql_where
+        )
+        return self.q
+
+    def _query_to_df(self,query):
+        df = pd.DataFrame(query.fetchall())
+        df.columns = query.keys()
+        return df
+
+    def execute(self):
+        if self.q is None:
+            self._build()
+
+        q = self.q
+
+        cache_hit = self._search_cache(q)
+
+        if cache_hit is not None:
+            self.resultsFromCache = True
+            return cache_hit
+        else:
+            self.resultsFromCache = False
+            connection = self.sql.connect()
+            results = self._query_to_df(connection.execute(q))
+            connection.close()
+            self._cache(q, results)
+            return results
+
+    def queryString(self):
+        if self.q is None:
+            self._build()
+
+        return self.q
+
 
 class MachineDataStore:
     def __init__(self, config_path):
@@ -126,20 +242,23 @@ class MachineDataStore:
             raise Exception('No SQL connection in config '+ config_path)
 
         self.sql = create_engine(self.config['postgres_connection_url'])
+        self._cache_dir = self.config['cache_dir']
 
+    def is_connectable(self):
+        connection = self.sql.connect()
+        was_closed = bool(connection.closed)
+        connection.close()
 
-    def query(self,model,timespan):
-        return MachineDataQuery(self.sql, model, timespan)
+        return not was_closed
 
+    def query(self,model,sample_freq):
+        return MachineDataQuery(self.sql, model, sample_freq)
 
-if __name__ == "__main__":
-    data_dir = '../../data'
-    config_path = '../../.config'
-
-    importer = SqlImport(config_path)
-
-    importer.import_csvs(data_dir + '/1hr/Model 1', "Sensor_Readings_Model1_1hr")
-    importer.import_csvs(data_dir + '/1hr/Model 2', "Sensor_Readings_Model2_1hr")
-
-    importer.import_csvs(data_dir + '/10min/Model 1', "Sensor_Readings_Model1_10min")
-    importer.import_csvs(data_dir + '/10min/Model 2', "Sensor_Readings_Model2_10min")
+    def clear_cache(self):
+        for the_file in os.listdir(self._cache_dir):
+            file_path = os.path.join(self._cache_dir, the_file)
+            try:
+                if os.path.isfile(file_path):
+                    os.unlink(file_path)
+            except Exception as e:
+                print(e)

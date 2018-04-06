@@ -1,6 +1,5 @@
 import csv
 
-
 def _load_config(file_path):
     data = {}
     with open(file_path) as f:
