@@ -141,8 +141,8 @@ class SqlBuilder:
 
 
     def build(self):
-        sql_select = 'SELECT ' + '*' if len(self.selected_col) == 0 else ','.join(self.selected_col)
-        sql_from = 'FROM ' + 'sensor_readings_model' + str(self.model) + '_' + self.sample_freq
+        sql_select = 'SELECT ' + '*' if len( self._query.selected_col) == 0 else ','.join( self._query.selected_col)
+        sql_from = 'FROM ' + 'sensor_readings_model' + str( self._query.model) + '_' +  self._query.sample_freq
         sql_where = self._build_where_clause()
 
         self.q = (
