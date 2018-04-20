@@ -128,13 +128,13 @@ class SqlBuilder:
     def _build_where_clause(self):
         clauses = []
 
-        if self._not_null:
+        if self._query._not_null:
             clauses.extend(['{} IS NOT NULL'.format(c) for c in self._query._not_null])
 
-        if self._psn:
+        if self._query._psn:
             clauses.append('psn in ({})'.format(','.join([str(x) for x in self._query._psn])))
 
-        if self._exclude_psn:
+        if self._query._exclude_psn:
             clauses.append('psn not in ({})'.format(','.join([str(x) for x in self._query._exclude_psn])))
 
         return 'WHERE ' + (' AND '.join(clauses)) if clauses else ''
