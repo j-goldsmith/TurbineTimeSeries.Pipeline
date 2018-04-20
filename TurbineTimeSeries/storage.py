@@ -121,6 +121,38 @@ class QueryCache:
         pickle.dump(cache_obj, open(query_path, 'wb'))
 
 
+class SqlBuilder:
+    def __init__(self, query):
+        self._query = query
+
+    def _build_where_clause(self):
+        clauses = []
+
+        if self._not_null:
+            clauses.extend(['{} IS NOT NULL'.format(c) for c in self._query._not_null])
+
+        if self._psn:
+            clauses.append('psn in ({})'.format(','.join([str(x) for x in self._query._psn])))
+
+        if self._exclude_psn:
+            clauses.append('psn not in ({})'.format(','.join([str(x) for x in self._query._exclude_psn])))
+
+        return 'WHERE ' + (' AND '.join(clauses)) if clauses else ''
+
+
+    def build(self):
+        sql_select = 'SELECT ' + '*' if len(self.selected_col) == 0 else ','.join(self.selected_col)
+        sql_from = 'FROM ' + 'sensor_readings_model' + str(self.model) + '_' + self.sample_freq
+        sql_where = self._build_where_clause()
+
+        self.q = (
+                sql_select + ' ' +
+                sql_from + ' ' +
+                sql_where
+        )
+        return self.q
+
+
 class MachineDataQuery (QueryCache):
     def __init__(self, sql, model, sample_freq):
         if model not in [1, 2]:
@@ -136,6 +168,7 @@ class MachineDataQuery (QueryCache):
 
         self._not_null = []
         self._psn = []
+        self._exclude_psn = []
 
         self.timerange = {
             min:None,
@@ -148,15 +181,23 @@ class MachineDataQuery (QueryCache):
         self.resultsFromCache = None
 
     def not_null(self,col):
-        if col is list:
+        if type(col) is list:
             self._not_null.extend(col)
         elif col is str:
             self._not_null.append(col)
 
         return self
 
+    def exclude_psn(self,val):
+        if type(val) is list:
+            self._exclude_psn.extend(val)
+        else:
+            self._exclude_psn.append(str(val))
+
+        return self
+
     def psn(self,val):
-        if val is list:
+        if type(val) is list:
             self._psn.extend(val)
         else:
             self._psn.append(str(val))
@@ -173,35 +214,12 @@ class MachineDataQuery (QueryCache):
         return self
 
     def select(self,col):
-        if col is list:
+        if type(col) is list:
             self.selected_col.extend(col)
-        elif col is str:
+        elif type(col) is str:
             self.selected_col.append(col)
 
         return self
-
-    def _build_where_clause(self):
-        clauses = []
-
-        if self._not_null:
-            clauses.extend(['{} IS NOT NULL'.format(c) for c in self._not_null])
-
-        if self._psn:
-            clauses.append('psn in ({})'.format(','.join(self._psn)))
-
-        return 'WHERE ' + (' AND '.join(clauses)) if clauses else ''
-
-    def _build(self):
-        sql_select = 'SELECT ' + '*' if len(self.selected_col) == 0 else ','.join(self.selected_col)
-        sql_from = 'FROM ' + 'sensor_readings_model'+str(self.model)+'_'+self.sample_freq
-        sql_where = self._build_where_clause()
-
-        self.q = (
-            sql_select + ' ' +
-            sql_from + ' ' +
-            sql_where
-        )
-        return self.q
 
     def _query_to_df(self,query):
         df = pd.DataFrame(query.fetchall())
@@ -209,10 +227,7 @@ class MachineDataQuery (QueryCache):
         return df
 
     def execute(self):
-        if self.q is None:
-            self._build()
-
-        q = self.q
+        q = SqlBuilder(self).build()
 
         cache_hit = self._search_cache(q)
 
@@ -226,12 +241,6 @@ class MachineDataQuery (QueryCache):
             connection.close()
             self._cache(q, results)
             return results
-
-    def queryString(self):
-        if self.q is None:
-            self._build()
-
-        return self.q
 
 
 class MachineDataStore:
