@@ -139,7 +139,6 @@ class SqlBuilder:
 
         return 'WHERE ' + (' AND '.join(clauses)) if clauses else ''
 
-
     def build(self):
         sql_select = 'SELECT ' + '*' if len( self._query.selected_col) == 0 else ','.join( self._query.selected_col)
         sql_from = 'FROM ' + 'sensor_readings_model' + str( self._query.model) + '_' +  self._query.sample_freq
