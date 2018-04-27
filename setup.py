@@ -9,7 +9,8 @@ def setup_package():
             	    'sqlalchemy',
             	    'sklearn',
             	    'pandas',
-            	    'awscli'
+            	    'awscli',
+                    'psycopg2'
           ],
           zip_safe=False)
 
