@@ -1,4 +1,4 @@
-from .config import _load_config
+from .config import load_config
 import glob
 import re
 import pandas as pd
@@ -9,11 +9,12 @@ import os
 import pickle
 from hashlib import sha1
 import datetime
+from TurbineTimeSeries.packagemodels import PackageModels
 
 
 class SqlImport:
     def __init__(self, config_path):
-        self.config = _load_config(config_path)
+        self.config = load_config(config_path)
 
         if 'postgres_connection_url' in self.config.keys():
             self.sql = create_engine(self.config['postgres_connection_url'])
@@ -163,6 +164,8 @@ class MachineDataQuery (QueryCache):
 
         self.sql = sql
         self.model = model
+        self.model_indexes = PackageModels[model].indexes
+
         self.sample_freq = sample_freq
 
         self._not_null = []
@@ -223,11 +226,12 @@ class MachineDataQuery (QueryCache):
     def _query_to_df(self,query):
         df = pd.DataFrame(query.fetchall())
         df.columns = query.keys()
+        df.set_index(self.model_indexes, inplace=True)
         return df
 
     def execute(self):
         q = SqlBuilder(self).build()
-
+        print(q)
         cache_hit = self._search_cache(q)
 
         if cache_hit is not None:
@@ -244,7 +248,7 @@ class MachineDataQuery (QueryCache):
 
 class MachineDataStore:
     def __init__(self, config_path):
-        self.config = _load_config(config_path)
+        self.config = load_config(config_path)
 
         if 'postgres_connection_url' not in self.config.keys():
             raise Exception('No SQL connection in config '+ config_path)

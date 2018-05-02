@@ -1,6 +1,6 @@
 import csv
 
-def _load_config(file_path):
+def load_config(file_path):
     data = {}
     with open(file_path) as f:
         reader = csv.reader(f, skipinitialspace=True, quotechar="'")

@@ -2,7 +2,7 @@ import unittest
 import time
 from TurbineTimeSeries.storage import MachineDataStore
 
-config_path = '..\.config'
+config_path = '..\\aws.config'
 
 
 class StorageTests(unittest.TestCase):
@@ -17,6 +17,12 @@ class StorageTests(unittest.TestCase):
         results = query.execute()
         for i,r in results.iterrows():
             self.assertEqual(r['psn'],20)
+
+        query = store.query(1, '1hr')
+        query.psn([20])
+        results = query.execute()
+        for i, r in results.iterrows():
+            self.assertEqual(r['psn'], 20)
 
     def test_is_cached(self):
         store = MachineDataStore(config_path)
@@ -44,6 +50,7 @@ class StorageTests(unittest.TestCase):
         query3.execute()
 
         self.assertEqual(query3.resultsFromCache, False)
+
 
 
 if __name__ == '__main__':
