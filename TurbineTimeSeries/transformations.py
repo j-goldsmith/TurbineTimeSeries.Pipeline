@@ -130,7 +130,6 @@ class PCA(Transformation):
 
         self.transformed = pd.DataFrame(
             self.pca.transform(masked),
-            columns=masked.columns,
             index=masked.index)
 
         return self.transformed
