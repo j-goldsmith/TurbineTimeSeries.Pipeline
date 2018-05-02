@@ -26,7 +26,7 @@ PackageModels = {
     1: PackageModel(1, [], [], []),
     2: PackageModel(model_number=2,
                     indexes=['timestamp', 'psn'],
-                    ignored=['SUM_ENR','SUM_ENG_ST','SUM_ENG_H','SUM_ESN'],
+                    ignored=['id','SUM_ENR','SUM_ENG_ST','SUM_ENG_H','SUM_ESN'],
                     tags=[
                         Tag('B_P1', 'GAS PATH', False, 'AMPLITUDE', 'Combustor dynamic pressure amplitude', 'float64'),
                         Tag('T5_S1', 'GAS PATH', True, 'TEMPERATURE',
