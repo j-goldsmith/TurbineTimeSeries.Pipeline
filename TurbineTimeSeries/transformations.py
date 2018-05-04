@@ -1,16 +1,18 @@
 from abc import ABC, abstractmethod
 import pandas as pd
 from sklearn import decomposition, preprocessing
+from datetime import timedelta, datetime
+from itertools import groupby
 
 
 def merge_transformed_features(raw, transformed):
     return (raw
             .reset_index()
             .merge(
-                transformed,
-                left_index=True,
-                right_index=True
-            )
+        transformed,
+        left_index=True,
+        right_index=True
+    )
             .set_index(raw.index.names))
 
 
@@ -27,14 +29,14 @@ class Transformation(ABC):
         self._after_transform_funcs = []
 
     def _set_hook(self, callbacks, new_funcs):
-        if isinstance(new_funcs,list):
+        if isinstance(new_funcs, list):
             callbacks.extend(new_funcs)
         elif callable(new_funcs):
             callbacks.append(new_funcs)
 
     def _call_hook(self, callbacks, x=None, y=None):
         for f in callbacks:
-            f(self,x,y)
+            f(self, x, y)
 
     def before_fit(self, funcs):
         self._set_hook(self._before_fit_funcs, funcs)
@@ -65,13 +67,13 @@ class Transformation(ABC):
         self._call_hook(self._after_transform_funcs, x)
 
     def fit_transform(self, x, y=None):
-        self.fit(x,y)
+        self.fit(x, y)
         return self.transform(x)
 
     def fit(self, x, y=None):
-        self._exec_before_fit(x,y)
-        self._fit(x,y)
-        self._exec_after_fit(x,y)
+        self._exec_before_fit(x, y)
+        self._fit(x, y)
+        self._exec_after_fit(x, y)
         return self
 
     def transform(self, x):
@@ -108,7 +110,7 @@ class StandardScaler(Transformation):
 
 class PCA(Transformation):
     def __init__(self, feature_suffix='_pca_', feature_mask=None, exporter=None, *args, **kwargs):
-        Transformation.__init__(self,exporter)
+        Transformation.__init__(self, exporter)
         self.pca = decomposition.PCA(*args, **kwargs)
         self.feature_mask = feature_mask
         self.feature_suffix = feature_suffix
@@ -175,12 +177,42 @@ class DropSparseCols(Transformation):
 
 
 class PartitionByTime(Transformation):
-    def __init(self, span):
+    def __init__(self, col, partition_span=timedelta(minutes=30), point_spacing=timedelta(minutes=10)):
         Transformation.__init__(self)
-        self._span = span
+        self._span = partition_span
+        self._point_spacing = point_spacing
+        self._col = col
+
+    def _get_key(self, d):
+        t = d
+        if self._span.seconds < 3600:
+            k = t + timedelta(minutes=-(t.minute % (self._span.seconds/60.0)))
+        else:
+            k = t + timedelta(minutes=-t.minute, hours=-(t.hour % (self._span.seconds/60/60.0)))
+        return datetime(k.year, k.month, k.day, k.hour, k.minute, 0)
 
     def _fit(self, x, y=None):
         return self
 
     def _transform(self, data):
-        pass
+        segments = []
+        indexes = []
+
+        for psn, psn_data in data.groupby('psn'):
+            g = groupby([x[1] for x in psn_data.index], key=self._get_key)
+            for key, timestamps in g:
+                timestamps = sorted(timestamps)
+
+                segments.append([x for x in psn_data[self._col].loc[[(psn,t) for t in timestamps]]])
+                new_index = [psn]
+                new_index.extend(timestamps)
+                indexes.append(tuple(new_index))
+
+        index_names = ['psn']
+        for i in range(len(max(segments,key=len))):
+            index_names.append('t'+str(i))
+
+        return pd.DataFrame(
+            segments,
+            index=pd.MultiIndex.from_tuples(indexes, names=index_names)
+        )
