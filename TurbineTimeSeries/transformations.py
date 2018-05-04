@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import pandas as pd
-from sklearn import decomposition, preprocessing
+from sklearn import decomposition, preprocessing, cluster
 from datetime import timedelta, datetime
 from itertools import groupby
 
@@ -186,9 +186,9 @@ class PartitionByTime(Transformation):
     def _get_key(self, d):
         t = d
         if self._span.seconds < 3600:
-            k = t + timedelta(minutes=-(t.minute % (self._span.seconds/60.0)))
+            k = t + timedelta(minutes=-(t.minute % (self._span.seconds / 60.0)))
         else:
-            k = t + timedelta(minutes=-t.minute, hours=-(t.hour % (self._span.seconds/60/60.0)))
+            k = t + timedelta(minutes=-t.minute, hours=-(t.hour % (self._span.seconds / 60 / 60.0)))
         return datetime(k.year, k.month, k.day, k.hour, k.minute, 0)
 
     def _fit(self, x, y=None):
@@ -203,16 +203,31 @@ class PartitionByTime(Transformation):
             for key, timestamps in g:
                 timestamps = sorted(timestamps)
 
-                segments.append([x for x in psn_data[self._col].loc[[(psn,t) for t in timestamps]]])
+                segments.append([x for x in psn_data[self._col].loc[[(psn, t) for t in timestamps]]])
                 new_index = [psn]
                 new_index.extend(timestamps)
                 indexes.append(tuple(new_index))
 
         index_names = ['psn']
-        for i in range(len(max(segments,key=len))):
-            index_names.append('t'+str(i))
+        for i in range(len(max(segments, key=len))):
+            index_names.append('t' + str(i))
 
         return pd.DataFrame(
             segments,
             index=pd.MultiIndex.from_tuples(indexes, names=index_names)
         )
+
+
+class KMeansLabels(Transformation):
+    def __init__(self, exporter=None, *args, **kwargs):
+        Transformation.__init__(self, exporter)
+        self._kmeans = cluster.KMeans(*args, **kwargs)
+
+    def _fit(self,x,y=None):
+        return self
+
+    def _transform(self, data):
+        self._kmeans.fit(data)
+        label_df = pd.DataFrame(self._kmeans.labels_, index=data.index)
+        return label_df
+
