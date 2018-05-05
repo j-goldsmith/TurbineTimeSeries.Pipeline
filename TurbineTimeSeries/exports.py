@@ -36,3 +36,20 @@ def png_pca_eigenvalues_as_tags(transformation, x, y):
 
 def png_pca_eigenvector_scatter_plot(transformation, x, y):
     return
+
+
+def png_cluster_distribution(transformation, x, y):
+    label_counts = transformation.transformed[0].value_counts().sort_values(ascending=False)
+    labels_sorted_by_freq = list(label_counts.keys())
+
+    plt.rcParams["figure.figsize"] = (15, 15)
+    fig = plt.figure(0)
+    ax1 = plt.subplot2grid((1, 1), (0, 0))
+    ax1.bar(range(225), label_counts[:])
+    ax1.set_ylabel('Segment Count')
+    ax1.set_xlabel('Cluster')
+    plt.suptitle("Cluster Distributions for Eigenvector 0, 30 Minute Profiles".format())
+    plt.grid("on")
+
+    transformation.exporter.save_fig(fig,"model_kmeans_eig_30_min_cluster_distribution")
+    plt.show()
