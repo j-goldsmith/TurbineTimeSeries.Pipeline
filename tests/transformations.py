@@ -1,6 +1,16 @@
 import unittest
 import pandas as pd
-from TurbineTimeSeries.transformations import DropNA, DropCols, StandardScaler, DropSparseCols, PCA, PartitionByTime
+from TurbineTimeSeries.transformations import (
+    DropNA,
+    DropCols,
+    StandardScaler,
+    DropSparseCols,
+    PCA,
+    PartitionByTime,
+    KMeansLabels,
+    FlattenPartitionedTime,
+    RoundTimestampIndex
+)
 from sklearn.pipeline import Pipeline
 from datetime import datetime,timedelta
 import numpy as np
@@ -125,6 +135,36 @@ class TransformationTests(unittest.TestCase):
 
         self.assertEqual(transformed.index.names, ['psn', 'timestamp'])
 
+    def test_cluster(self):
+        data = pd.DataFrame({
+            'a': [1, 0, -2, 4, 5, 2, 3, 4, 5, 6, 7],
+            'b': [1, 4, 3, 6, 8, 9, 7, 8, 9, 0, 1],
+            'c': [None, 3, None, 2, 1, 0, 1, 2, 3, 4, 5],
+            'd': [6, 4, 3, 3, 7, 8, 4, 5, 6, 7, 8],
+            'psn': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            'timestamp': [
+                datetime(2017, 1, 1, 0, 10),
+                datetime(2017, 1, 1, 0, 20),
+                datetime(2017, 1, 1, 0, 30),
+                datetime(2017, 1, 1, 0, 40),
+                datetime(2017, 1, 1, 0, 50),
+                datetime(2017, 1, 1, 1, 0),
+                datetime(2017, 1, 1, 1, 10),
+                datetime(2017, 1, 1, 1, 20),
+                datetime(2017, 1, 1, 1, 30),
+                datetime(2017, 1, 1, 1, 40),
+                datetime(2017, 1, 1, 1, 50)
+            ]
+        })
+        data.set_index(['psn', 'timestamp'], inplace=True)
+        pipeline = Pipeline([
+            ('DropNA', DropNA()),
+            ('KMeans', KMeansLabels(n_clusters=3))])
+        transformed = pipeline.fit_transform(data)
+        print(transformed)
+        #self.assertEqual(transformed.index[0],(1, pd.Timestamp('2017-01-01 00:10:00'), pd.Timestamp('2017-01-01 00:20:00'), np.nan))
+        #self.assertEqual(transformed.index[1],(1, pd.Timestamp('2017-01-01 00:30:00'), pd.Timestamp('2017-01-01 00:40:00'), pd.Timestamp('2017-01-01 00:50:00')))
+
     def test_partition_by_time(self):
         data = pd.DataFrame({
             'a': [1, 0, -2, 4, 5, 2, 3, 4, 5, 6, 7],
@@ -152,3 +192,83 @@ class TransformationTests(unittest.TestCase):
         self.assertEqual(transformed.index[0],(1, pd.Timestamp('2017-01-01 00:10:00'), pd.Timestamp('2017-01-01 00:20:00'), np.nan))
         self.assertEqual(transformed.index[1],(1, pd.Timestamp('2017-01-01 00:30:00'), pd.Timestamp('2017-01-01 00:40:00'), pd.Timestamp('2017-01-01 00:50:00')))
 
+    def test_time_index_round(self):
+        data = pd.DataFrame({
+            'a': [1, 0, -2, 4, 5, 2, 3, 4, 5, 6, 7],
+            'b': [1, 4, 3, 6, 8, 9, 7, 8, 9, 0, 1],
+            'c': [2, 3, 1, None, 1, 0, 1, 2, 3, 4, 5],
+            'd': [6, 4, 3, 3, 7, 8, 4, 5, 6, 7, 8],
+            'psn': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            'timestamp': [
+                datetime(2017, 1, 1, 0, 10,3),
+                datetime(2017, 1, 1, 0, 20,5),
+                datetime(2017, 1, 1, 0, 29,1),
+                datetime(2017, 1, 1, 0, 40),
+                datetime(2017, 1, 1, 0, 50),
+                datetime(2017, 1, 1, 1, 0),
+                datetime(2017, 1, 1, 1, 10),
+                datetime(2017, 1, 1, 1, 20),
+                datetime(2017, 1, 1, 1, 30),
+                datetime(2017, 1, 1, 1, 40),
+                datetime(2017, 1, 1, 1, 50)
+            ]
+        })
+        data.set_index(['psn', 'timestamp'], inplace=True)
+        pipeline = Pipeline([
+            ('RoundTimestampIndex', RoundTimestampIndex())
+        ])
+        transformed = pipeline.fit_transform(data)
+        print(transformed)
+
+    def test_flatten_partitioned(self):
+        data = pd.DataFrame({
+            'a': [1, 0, -2, 4, 5, 2, 3, 4, 5, 6, 7],
+            'b': [1, 4, 3, 6, 8, 9, 7, 8, 9, 0, 1],
+            'c': [2, 3, None, 2, 1, 0, 1, 2, 3, 4, 5],
+            'd': [6, 4, 3, 3, 7, 8, 4, 5, 6, 7, 8],
+            'psn': [1, 1, 1, 1, 1, 1, 2, 1, 3, 1, 4],
+            'timestamp': [
+                datetime(2017, 1, 1, 0, 10),
+                datetime(2017, 1, 1, 0, 20),
+                datetime(2017, 1, 1, 0, 30),
+                datetime(2017, 1, 1, 0, 40),
+                datetime(2017, 1, 1, 0, 50),
+                datetime(2017, 1, 1, 1, 0),
+                datetime(2017, 1, 1, 1, 10),
+                datetime(2017, 1, 1, 1, 20),
+                datetime(2017, 1, 1, 1, 30),
+                datetime(2017, 1, 1, 1, 40),
+                datetime(2017, 1, 1, 1, 50)
+            ]
+        })
+        data.set_index(['psn', 'timestamp'], inplace=True)
+        pipeline = Pipeline([
+            ('DropNA', DropNA()),
+            ('PartitionTime', PartitionByTime(col='a', partition_span=timedelta(minutes=30))),
+            ('Kmeans', KMeansLabels(n_clusters=2)),
+            ('Flatten', FlattenPartitionedTime())
+        ])
+        transformed = pipeline.fit_transform(data)
+        print(transformed)
+
+    def test_stepsize(self):
+        data = pd.DataFrame({
+            'a': [1, 0, -2, 4, 5, 2, 3, 4, 5, 6, 7],
+            'b': [1, 4, 3, 6, 8, 9, 7, 8, 9, 0, 1],
+            'c': [2, 3, None, 2, 1, 0, 1, 2, 3, 4, 5],
+            'd': [6, 4, 3, 3, 7, 8, 4, 5, 6, 7, 8],
+            'psn': [1, 1, 1, 1, 1, 1, 2, 1, 3, 1, 4],
+            'timestamp': [
+                datetime(2017, 1, 1, 0, 10),
+                datetime(2017, 1, 1, 0, 20),
+                datetime(2017, 1, 1, 0, 30),
+                datetime(2017, 1, 1, 0, 40),
+                datetime(2017, 1, 1, 0, 50),
+                datetime(2017, 1, 1, 1, 0),
+                datetime(2017, 1, 1, 1, 10),
+                datetime(2017, 1, 1, 1, 20),
+                datetime(2017, 1, 1, 1, 30),
+                datetime(2017, 1, 1, 1, 40),
+                datetime(2017, 1, 1, 1, 50)
+            ]
+        })
