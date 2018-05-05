@@ -17,11 +17,11 @@ def merge_transformed_features(raw, transformed):
 
 
 class Transformation(ABC):
-    def __init__(self, exporter=None):
+    def __init__(self, exporter=None, profiler=None):
         super().__init__()
         self.transformed = None
         self.exporter = exporter
-
+        self.profiler = profiler
         self._before_fit_funcs = []
         self._after_fit_funcs = []
 
@@ -71,9 +71,19 @@ class Transformation(ABC):
         return self.transform(x)
 
     def fit(self, x, y=None):
+
+        # self.profiler.start('before fit')
         self._exec_before_fit(x, y)
+        # self.profiler.end('before fit')
+
+        # self.profiler.start('fit')
         self._fit(x, y)
+        # self.profiler.end('fit')
+
+        # self.profiler.start('after fit')
         self._exec_after_fit(x, y)
+        # self.profiler.stop('after fit')
+
         return self
 
     def transform(self, x):
@@ -177,10 +187,13 @@ class DropSparseCols(Transformation):
 
 
 class PartitionByTime(Transformation):
-    def __init__(self, col, partition_span=timedelta(minutes=30), point_spacing=timedelta(minutes=10)):
+    def __init__(self, col, partition_span=timedelta(minutes=30), point_spacing=timedelta(minutes=10),
+                 only_complete_partitions=True):
         Transformation.__init__(self)
         self._span = partition_span
         self._point_spacing = point_spacing
+        self._only_complete = only_complete_partitions
+        self._n_complete = int(partition_span.seconds / point_spacing.seconds)
         self._col = col
 
     def _get_key(self, d):
@@ -199,11 +212,15 @@ class PartitionByTime(Transformation):
         indexes = []
 
         for psn, psn_data in data.groupby('psn'):
-            g = groupby([x[1] for x in psn_data.index], key=self._get_key)
+            g = groupby([x[psn_data.index.names.index('timestamp')] for x in psn_data.index], key=self._get_key)
             for key, timestamps in g:
+                timestamps = list(timestamps)
+                if self._only_complete & (len(timestamps) < self._n_complete):
+                    continue
+
                 timestamps = sorted(timestamps)
 
-                segments.append([x for x in psn_data[self._col].loc[[(psn, t) for t in timestamps]]])
+                segments.append([x for x in psn_data[self._col].loc[[(t, psn) for t in timestamps]]])
                 new_index = [psn]
                 new_index.extend(timestamps)
                 indexes.append(tuple(new_index))
@@ -218,16 +235,111 @@ class PartitionByTime(Transformation):
         )
 
 
+class FlattenPartitionedTime(Transformation):
+    def __init__(self, exporter=None, *args, **kwargs):
+        Transformation.__init__(self, exporter)
+
+    def _fit(self, x, y=None):
+        return self
+
+    def _transform(self, data):
+        indexes = []
+        entries = []
+        for k, v in data.iterrows():
+            for i in range(1, len(k)):
+                indexes.append((k[0], k[i]))
+                entries.append(v)
+
+        return pd.DataFrame(entries, columns=data.columns,
+                            index=pd.MultiIndex.from_tuples(indexes, names=['psn', 'timestamp']))
+
+
 class KMeansLabels(Transformation):
     def __init__(self, exporter=None, *args, **kwargs):
         Transformation.__init__(self, exporter)
         self._kmeans = cluster.KMeans(*args, **kwargs)
 
-    def _fit(self,x,y=None):
+    def _fit(self, x, y=None):
         return self
 
     def _transform(self, data):
         self._kmeans.fit(data)
-        label_df = pd.DataFrame(self._kmeans.labels_, index=data.index)
+        label_df = pd.DataFrame(self._kmeans.labels_, index=data.index, columns=['cluster_label'])
         return label_df
+
+
+class RoundTimestampIndex(Transformation):
+    def __init__(self, to='10min'):
+        self._to = to
+
+    def fit(self, x, y=None):
+        return self
+
+    def transform(self, data):
+        idx = data.index.tolist()
+        timestamp_idx = data.index.names.index('timestamp')
+        psn_idx = data.index.names.index('psn')
+
+        for i, t in enumerate(idx):
+            psn = t[psn_idx]
+            time_rounded = t[timestamp_idx].round(self._to)
+            if psn_idx > timestamp_idx:
+                idx[i] = (time_rounded, psn)
+            else:
+                idx[i] = (psn, time_rounded)
+
+        return pd.DataFrame(data.values,
+                            columns=data.columns,
+                            index=pd.MultiIndex.from_tuples(idx, names=data.index.names))
+
+
+class StepSize(Transformation):
+    def __init__(self, ignore_columns=None,threshold = 3,rolling_days=7):
+        self._ignore_columns = ignore_columns
+        self._threshold = threshold
+        self._rolling_days = rolling_days
+
+    def _fit(self, x, y=None):
+        return self
+
+    def _transform(self, data):
+        if self._ignore_columns == None:
+            cols = data.columns
+        elif isinstance(self._ignore_columns, list):
+            cols = [a for a in data.columns if a not in list(self._ignore_columns)]
+        else:
+            raise Exception('ignore_columns must be list or None')
+
+        finaldf = pd.DataFrame()
+        orig_index_cols = data.index.names
+
+        for psn, psn_data in data.groupby('psn'):
+            ## subset dataframe to just one psn
+            df = psn_data.sort_index(ascending=True)
+
+            ## create datetimeindex
+            df = df.reset_index(level=df.index.names.index('psn'))
+            ## subset to just columns we want to run stepsize on
+
+            df = df[cols]
+            # bin periods
+            rollings_days_str = str(self._rolling_days) + 'd'
+            min_dps = self._rolling_days * 24
+            avgs = df.rolling(rollings_days_str, min_periods=min_dps).mean()  ## 7days*24hrs=168 datapoints
+            stdevs = df.rolling(rollings_days_str, min_periods=min_dps).std()
+
+            ## create low and high cutoffs
+            highcutoff = avgs + self._threshold * stdevs
+            lowcutoff = avgs - self._threshold * stdevs
+
+            ## build return df
+            highs = df > highcutoff  ## True if above high cutoff
+            lows = df < lowcutoff  ## True if below low cutoff
+            returndf = highs | lows
+            returndf['psn'] = psn
+
+            returndf = returndf.reset_index().set_index(orig_index_cols)
+            finaldf = finaldf.append(returndf)
+
+        return finaldf
 
