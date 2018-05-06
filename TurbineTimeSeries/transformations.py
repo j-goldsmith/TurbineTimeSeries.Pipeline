@@ -306,7 +306,7 @@ class StepSize(Transformation):
         return self
 
     def _transform(self, data):
-        if self._ignore_columns == None:
+        if self._ignore_columns is None:
             cols = data.columns
         elif isinstance(self._ignore_columns, list):
             cols = [a for a in data.columns if a not in list(self._ignore_columns)]
@@ -366,7 +366,18 @@ class PowerStepSize(Transformation):
             df_shifted = df.shift(1)
             percent_diff = (df_shifted - df)/df_shifted
             flags = abs(percent_diff) > self._step_size_threshold
-            print(flags)
+
             finaldf = finaldf.append(flags.to_frame())
 
         return finaldf
+
+
+class EngineShutdownLabels(Transformation):
+    def __init__(self):
+        Transformation.__init__(self)
+
+    def _fit(self,x,y=None):
+        return self
+
+    def _transform(self, data):
+        return data
