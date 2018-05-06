@@ -295,10 +295,12 @@ class RoundTimestampIndex(Transformation):
 
 
 class StepSize(Transformation):
-    def __init__(self, ignore_columns=None, threshold=3, rolling_days=7):
+    def __init__(self, ignore_columns=None, std_threshold=5, rolling_days=1, min_points_per_day=24):
+        Transformation.__init__(self)
         self._ignore_columns = ignore_columns
-        self._threshold = threshold
+        self._threshold = std_threshold
         self._rolling_days = rolling_days
+        self._min_points_per_day = min_points_per_day
 
     def _fit(self, x, y=None):
         return self
@@ -325,14 +327,16 @@ class StepSize(Transformation):
             df = df[cols]
             # bin periods
             rollings_days_str = str(self._rolling_days) + 'd'
-            min_dps = self._rolling_days * 24
-            avgs = df.rolling(rollings_days_str, min_periods=min_dps).mean()  ## 7days*24hrs=168 datapoints
+            min_dps = self._rolling_days * self._min_points_per_day
+            avgs = df.rolling(rollings_days_str, min_periods=min_dps).mean()
             stdevs = df.rolling(rollings_days_str, min_periods=min_dps).std()
-
+            print(avgs)
+            print(stdevs)
             ## create low and high cutoffs
             highcutoff = avgs + self._threshold * stdevs
             lowcutoff = avgs - self._threshold * stdevs
-
+            print(highcutoff)
+            print(lowcutoff)
             ## build return df
             highs = df > highcutoff  ## True if above high cutoff
             lows = df < lowcutoff  ## True if below low cutoff

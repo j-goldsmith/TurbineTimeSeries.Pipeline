@@ -10,7 +10,8 @@ from TurbineTimeSeries.transformations import (
     KMeansLabels,
     FlattenPartitionedTime,
     RoundTimestampIndex,
-    PowerStepSize
+    PowerStepSize,
+    StepSize
 )
 from sklearn.pipeline import Pipeline
 from datetime import datetime,timedelta
@@ -276,6 +277,34 @@ class TransformationTests(unittest.TestCase):
         data.set_index(['psn', 'timestamp'], inplace=True)
         pipeline = Pipeline([
             ('PowerStep', PowerStepSize(power_col='d'))
+        ])
+        transformed = pipeline.fit_transform(data)
+        print(transformed)
+
+    def test_step_size(self):
+        data = pd.DataFrame({
+            'a': [1, 0, -2, 4, 5, 2, 3, 4, 5, 6, 7],
+            'b': [1, 4, 400, 6, 2, 2, 3, 8, 9, 2, 4],
+            'c': [2, 3, 7, 2, 1, 0, 1, 2, 3, 400, 3],
+            'd': [6, 4, 4, 3, 7, 8, 4, 5, 1, 2, 200],
+            'psn': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            'timestamp': [
+                datetime(2017, 1, 1, 0, 10),
+                datetime(2017, 1, 1, 0, 20),
+                datetime(2017, 1, 1, 0, 30),
+                datetime(2017, 1, 1, 0, 40),
+                datetime(2017, 1, 1, 0, 50),
+                datetime(2017, 1, 1, 1, 0),
+                datetime(2017, 1, 1, 1, 10),
+                datetime(2017, 1, 1, 1, 20),
+                datetime(2017, 1, 1, 1, 30),
+                datetime(2017, 1, 1, 1, 40),
+                datetime(2017, 1, 1, 1, 50)
+            ]
+        })
+        data.set_index(['psn', 'timestamp'], inplace=True)
+        pipeline = Pipeline([
+            ('Stepsize', StepSize(std_threshold=2, min_points_per_day=5))
         ])
         transformed = pipeline.fit_transform(data)
         print(transformed)
