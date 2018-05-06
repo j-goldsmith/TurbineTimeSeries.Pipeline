@@ -9,7 +9,8 @@ from TurbineTimeSeries.transformations import (
     PartitionByTime,
     KMeansLabels,
     FlattenPartitionedTime,
-    RoundTimestampIndex
+    RoundTimestampIndex,
+    PowerStepSize
 )
 from sklearn.pipeline import Pipeline
 from datetime import datetime,timedelta
@@ -251,13 +252,13 @@ class TransformationTests(unittest.TestCase):
         transformed = pipeline.fit_transform(data)
         print(transformed)
 
-    def test_stepsize(self):
+    def test_power_step(self):
         data = pd.DataFrame({
             'a': [1, 0, -2, 4, 5, 2, 3, 4, 5, 6, 7],
             'b': [1, 4, 3, 6, 8, 9, 7, 8, 9, 0, 1],
             'c': [2, 3, None, 2, 1, 0, 1, 2, 3, 4, 5],
-            'd': [6, 4, 3, 3, 7, 8, 4, 5, 6, 7, 8],
-            'psn': [1, 1, 1, 1, 1, 1, 2, 1, 3, 1, 4],
+            'd': [6, 4, 4, 3, 7, 8, 4, 5, 1, 7, 8],
+            'psn': [1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3],
             'timestamp': [
                 datetime(2017, 1, 1, 0, 10),
                 datetime(2017, 1, 1, 0, 20),
@@ -272,3 +273,9 @@ class TransformationTests(unittest.TestCase):
                 datetime(2017, 1, 1, 1, 50)
             ]
         })
+        data.set_index(['psn', 'timestamp'], inplace=True)
+        pipeline = Pipeline([
+            ('PowerStep', PowerStepSize(power_col='d'))
+        ])
+        transformed = pipeline.fit_transform(data)
+        print(transformed)
