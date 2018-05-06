@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import numpy as np
 import pandas as pd
 from sklearn import decomposition, preprocessing, cluster
 from datetime import timedelta, datetime
@@ -294,7 +295,7 @@ class RoundTimestampIndex(Transformation):
 
 
 class StepSize(Transformation):
-    def __init__(self, ignore_columns=None,threshold = 3,rolling_days=7):
+    def __init__(self, ignore_columns=None, threshold=3, rolling_days=7):
         self._ignore_columns = ignore_columns
         self._threshold = threshold
         self._rolling_days = rolling_days
@@ -343,3 +344,25 @@ class StepSize(Transformation):
 
         return finaldf
 
+
+class PowerStepSize(Transformation):
+    def __init__(self, power_col='perf_pow', step_size_threshold=.25):
+        Transformation.__init__(self)
+        self._power_col = power_col
+        self._step_size_threshold = step_size_threshold
+
+    def _fit(self, x, y=None):
+        return self
+
+    def _transform(self, data):
+        finaldf = pd.DataFrame()
+
+        for psn,psn_data in data.groupby('psn'):
+            df = psn_data[self._power_col].sort_index()
+            df_shifted = df.shift(1)
+            percent_diff = (df_shifted - df)/df_shifted
+            flags = abs(percent_diff) > self._step_size_threshold
+            print(flags)
+            finaldf = finaldf.append(flags.to_frame())
+
+        return finaldf
