@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn import decomposition, preprocessing, cluster
 from datetime import timedelta, datetime
 from itertools import groupby
-
+from TurbineTimeSeries.profiler import Profiler
 
 def merge_transformed_features(raw, transformed):
     return (raw
@@ -22,7 +22,7 @@ class Transformation(ABC):
         super().__init__()
         self.transformed = None
         self.exporter = exporter
-        self.profiler = profiler
+        self.profiler = profiler if profiler is not None else Profiler()
         self._before_fit_funcs = []
         self._after_fit_funcs = []
 

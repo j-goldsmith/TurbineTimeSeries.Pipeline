@@ -1,0 +1,189 @@
+2018-05-08 16:25:39.860206,DropCols,start,before fit
+2018-05-08 16:25:39.860206,DropCols,end,before fit
+2018-05-08 16:25:39.875818,DropCols,start,fit
+2018-05-08 16:25:39.875818,DropCols,end,fit
+2018-05-08 16:25:39.875818,DropCols,start,after fit
+2018-05-08 16:25:39.891473,DropCols,end,after fit
+2018-05-08 16:25:39.891473,DropCols,start,before transform
+2018-05-08 16:25:39.891473,DropCols,end,before transform
+2018-05-08 16:25:39.891473,DropCols,start,transform
+2018-05-08 16:25:39.922695,DropCols,end,transform
+2018-05-08 16:25:39.922695,DropCols,start,after transform
+2018-05-08 16:25:39.922695,DropCols,end,after transform
+2018-05-08 16:25:39.938346,DropSparseCols,start,before fit
+2018-05-08 16:25:39.938346,DropSparseCols,end,before fit
+2018-05-08 16:25:39.938346,DropSparseCols,start,fit
+2018-05-08 16:25:39.938346,DropSparseCols,end,fit
+2018-05-08 16:25:39.953974,DropSparseCols,start,after fit
+2018-05-08 16:25:39.953974,DropSparseCols,end,after fit
+2018-05-08 16:25:39.953974,DropSparseCols,start,before transform
+2018-05-08 16:25:39.953974,DropSparseCols,end,before transform
+2018-05-08 16:25:39.953974,DropSparseCols,start,transform
+2018-05-08 16:25:40.063370,DropCols,start,before transform
+2018-05-08 16:25:40.063370,DropCols,end,before transform
+2018-05-08 16:25:40.063370,DropCols,start,transform
+2018-05-08 16:25:40.094592,DropCols,end,transform
+2018-05-08 16:25:40.110218,DropCols,start,after transform
+2018-05-08 16:25:40.110218,DropCols,end,after transform
+2018-05-08 16:25:40.125845,DropSparseCols,end,transform
+2018-05-08 16:25:40.125845,DropSparseCols,start,after transform
+2018-05-08 16:25:40.125845,DropSparseCols,end,after transform
+2018-05-08 16:25:40.125845,DropNA,start,before fit
+2018-05-08 16:25:40.141498,DropNA,end,before fit
+2018-05-08 16:25:40.141498,DropNA,start,fit
+2018-05-08 16:25:40.141498,DropNA,end,fit
+2018-05-08 16:25:40.141498,DropNA,start,after fit
+2018-05-08 16:25:40.157094,DropNA,end,after fit
+2018-05-08 16:25:40.157094,DropNA,start,before transform
+2018-05-08 16:25:40.157094,DropNA,end,before transform
+2018-05-08 16:25:40.157094,DropNA,start,transform
+2018-05-08 16:25:40.203975,DropNA,end,transform
+2018-05-08 16:25:40.219605,DropNA,start,after transform
+2018-05-08 16:25:40.219605,DropNA,end,after transform
+2018-05-08 16:26:05.409325,StandardScaler,start,before fit
+2018-05-08 16:26:05.424900,StandardScaler,end,before fit
+2018-05-08 16:26:05.431203,StandardScaler,start,fit
+2018-05-08 16:26:05.555851,StandardScaler,end,fit
+2018-05-08 16:26:05.559838,StandardScaler,start,after fit
+2018-05-08 16:26:05.562845,StandardScaler,end,after fit
+2018-05-08 16:26:05.566865,StandardScaler,start,before transform
+2018-05-08 16:26:05.570868,StandardScaler,end,before transform
+2018-05-08 16:26:05.574877,StandardScaler,start,transform
+2018-05-08 16:26:05.645159,StandardScaler,end,transform
+2018-05-08 16:26:05.649139,StandardScaler,start,after transform
+2018-05-08 16:26:05.653150,StandardScaler,end,after transform
+2018-05-08 16:26:05.657191,PCA,start,before fit
+2018-05-08 16:26:05.660321,PCA,end,before fit
+2018-05-08 16:26:05.664334,PCA,start,fit
+2018-05-08 16:26:06.021364,PCA,end,fit
+2018-05-08 16:26:06.021364,PCA,start,after fit
+2018-05-08 16:26:06.021364,PCA,end,after fit
+2018-05-08 16:26:06.036990,PCA,start,before transform
+2018-05-08 16:26:06.036990,PCA,end,before transform
+2018-05-08 16:26:06.036990,PCA,start,transform
+2018-05-08 16:26:06.174092,PCA,end,transform
+2018-05-08 16:26:06.178104,PCA,start,after transform
+2018-05-08 16:26:06.263650,PCA,end,after transform
+2018-05-08 16:26:06.267674,PartitionByTime,start,before fit
+2018-05-08 16:26:06.270669,PartitionByTime,end,before fit
+2018-05-08 16:26:06.274679,PartitionByTime,start,fit
+2018-05-08 16:26:06.277877,PartitionByTime,end,fit
+2018-05-08 16:26:06.277877,PartitionByTime,start,after fit
+2018-05-08 16:26:06.277877,PartitionByTime,end,after fit
+2018-05-08 16:26:06.277877,PartitionByTime,start,before transform
+2018-05-08 16:26:06.292784,PartitionByTime,end,before transform
+2018-05-08 16:26:06.297797,PartitionByTime,start,transform
+2018-05-08 16:26:58.684490,PartitionByTime,end,transform
+2018-05-08 16:26:58.689466,PartitionByTime,start,after transform
+2018-05-08 16:26:59.395417,PartitionByTime,end,after transform
+2018-05-08 16:26:59.400409,KMeansLabels,start,before fit
+2018-05-08 16:26:59.405446,KMeansLabels,end,before fit
+2018-05-08 16:26:59.410455,KMeansLabels,start,fit
+2018-05-08 16:26:59.415449,KMeansLabels,end,fit
+2018-05-08 16:26:59.420464,KMeansLabels,start,after fit
+2018-05-08 16:26:59.426481,KMeansLabels,end,after fit
+2018-05-08 16:26:59.432524,KMeansLabels,start,before transform
+2018-05-08 16:26:59.438512,KMeansLabels,end,before transform
+2018-05-08 16:26:59.444558,KMeansLabels,start,transform
+2018-05-08 16:27:43.361623,KMeansLabels,end,transform
+2018-05-08 16:27:43.366640,KMeansLabels,start,after transform
+2018-05-08 16:28:13.965806,KMeansLabels,end,after transform
+2018-05-08 16:28:13.965806,FlattenPartitionedTime,start,before fit
+2018-05-08 16:28:13.965806,FlattenPartitionedTime,end,before fit
+2018-05-08 16:28:13.981414,FlattenPartitionedTime,start,fit
+2018-05-08 16:28:13.981414,FlattenPartitionedTime,end,fit
+2018-05-08 16:28:13.981414,FlattenPartitionedTime,start,after fit
+2018-05-08 16:28:13.981414,FlattenPartitionedTime,end,after fit
+2018-05-08 16:28:13.997040,FlattenPartitionedTime,start,before transform
+2018-05-08 16:28:13.997040,FlattenPartitionedTime,end,before transform
+2018-05-08 16:28:13.997040,FlattenPartitionedTime,start,transform
+2018-05-08 16:28:21.081066,FlattenPartitionedTime,end,transform
+2018-05-08 16:28:21.081066,FlattenPartitionedTime,start,after transform
+2018-05-08 16:28:21.096700,FlattenPartitionedTime,end,after transform
+2018-05-08 16:42:54.712889,DropCols,start,before fit
+2018-05-08 16:42:54.717901,DropCols,end,before fit
+2018-05-08 16:42:54.722914,DropCols,start,fit
+2018-05-08 16:42:54.728930,DropCols,end,fit
+2018-05-08 16:42:54.733945,DropCols,start,after fit
+2018-05-08 16:42:54.738957,DropCols,end,after fit
+2018-05-08 16:42:54.742993,DropCols,start,before transform
+2018-05-08 16:42:54.746980,DropCols,end,before transform
+2018-05-08 16:42:54.750988,DropCols,start,transform
+2018-05-08 16:42:54.780099,DropCols,end,transform
+2018-05-08 16:42:54.783900,DropCols,start,after transform
+2018-05-08 16:42:54.787914,DropCols,end,after transform
+2018-05-08 16:42:54.791957,DropSparseCols,start,before fit
+2018-05-08 16:42:54.795934,DropSparseCols,end,before fit
+2018-05-08 16:42:54.799945,DropSparseCols,start,fit
+2018-05-08 16:42:54.803955,DropSparseCols,end,fit
+2018-05-08 16:42:54.808015,DropSparseCols,start,after fit
+2018-05-08 16:42:54.811893,DropSparseCols,end,after fit
+2018-05-08 16:42:54.815889,DropSparseCols,start,before transform
+2018-05-08 16:42:54.819930,DropSparseCols,end,before transform
+2018-05-08 16:42:54.823911,DropSparseCols,start,transform
+2018-05-08 16:42:54.918832,DropCols,start,before transform
+2018-05-08 16:42:54.918832,DropCols,end,before transform
+2018-05-08 16:42:54.934454,DropCols,start,transform
+2018-05-08 16:42:54.965707,DropCols,end,transform
+2018-05-08 16:42:54.965707,DropCols,start,after transform
+2018-05-08 16:42:54.965707,DropCols,end,after transform
+2018-05-08 16:42:54.965707,DropSparseCols,end,transform
+2018-05-08 16:42:54.981332,DropSparseCols,start,after transform
+2018-05-08 16:42:54.981332,DropSparseCols,end,after transform
+2018-05-08 16:42:54.981332,DropNA,start,before fit
+2018-05-08 16:42:54.981332,DropNA,end,before fit
+2018-05-08 16:42:54.996968,DropNA,start,fit
+2018-05-08 16:42:54.996968,DropNA,end,fit
+2018-05-08 16:42:54.996968,DropNA,start,after fit
+2018-05-08 16:42:54.996968,DropNA,end,after fit
+2018-05-08 16:42:55.012608,DropNA,start,before transform
+2018-05-08 16:42:55.012608,DropNA,end,before transform
+2018-05-08 16:42:55.012608,DropNA,start,transform
+2018-05-08 16:42:55.075111,DropNA,end,transform
+2018-05-08 16:42:55.075111,DropNA,start,after transform
+2018-05-08 16:42:55.090684,DropNA,end,after transform
+2018-05-08 16:43:36.653156,StandardScaler,start,before fit
+2018-05-08 16:43:36.668807,StandardScaler,end,before fit
+2018-05-08 16:43:36.668807,StandardScaler,start,fit
+2018-05-08 16:43:36.793832,StandardScaler,end,fit
+2018-05-08 16:43:36.809440,StandardScaler,start,after fit
+2018-05-08 16:43:36.809440,StandardScaler,end,after fit
+2018-05-08 16:43:36.809440,StandardScaler,start,before transform
+2018-05-08 16:43:36.809440,StandardScaler,end,before transform
+2018-05-08 16:43:36.825079,StandardScaler,start,transform
+2018-05-08 16:43:36.886393,StandardScaler,end,transform
+2018-05-08 16:43:36.901995,StandardScaler,start,after transform
+2018-05-08 16:43:36.901995,StandardScaler,end,after transform
+2018-05-08 16:43:36.901995,PCA,start,before fit
+2018-05-08 16:43:36.901995,PCA,end,before fit
+2018-05-08 16:43:36.917654,PCA,start,fit
+2018-05-08 16:43:37.283521,PCA,end,fit
+2018-05-08 16:43:37.283521,PCA,start,after fit
+2018-05-08 16:43:37.283521,PCA,end,after fit
+2018-05-08 16:43:37.299138,PCA,start,before transform
+2018-05-08 16:43:37.299138,PCA,end,before transform
+2018-05-08 16:43:37.299138,PCA,start,transform
+2018-05-08 16:43:37.439780,PCA,end,transform
+2018-05-08 16:43:37.439780,PCA,start,after transform
+2018-05-08 16:43:37.627316,PCA,end,after transform
+2018-05-08 16:43:37.627316,PartitionByTime,start,before fit
+2018-05-08 16:43:37.642925,PartitionByTime,end,before fit
+2018-05-08 16:43:37.642925,PartitionByTime,start,fit
+2018-05-08 16:43:37.642925,PartitionByTime,end,fit
+2018-05-08 16:43:37.642925,PartitionByTime,start,after fit
+2018-05-08 16:43:37.658582,PartitionByTime,end,after fit
+2018-05-08 16:43:37.658582,PartitionByTime,start,before transform
+2018-05-08 16:43:37.674210,PartitionByTime,end,before transform
+2018-05-08 16:43:37.674210,PartitionByTime,start,transform
+2018-05-08 16:45:24.263538,PartitionByTime,end,transform
+2018-05-08 16:45:24.279130,PartitionByTime,start,after transform
+2018-05-08 16:45:24.675721,PartitionByTime,end,after transform
+2018-05-08 16:45:24.691347,KMeansLabels,start,before fit
+2018-05-08 16:45:24.691347,KMeansLabels,end,before fit
+2018-05-08 16:45:24.691347,KMeansLabels,start,fit
+2018-05-08 16:45:24.691347,KMeansLabels,end,fit
+2018-05-08 16:45:24.707003,KMeansLabels,start,after fit
+2018-05-08 16:45:24.707003,KMeansLabels,end,after fit
+2018-05-08 16:45:24.707003,KMeansLabels,start,before transform
+2018-05-08 16:45:24.707003,KMeansLabels,end,before transform
+2018-05-08 16:45:24.722631,KMeansLabels,start,transform

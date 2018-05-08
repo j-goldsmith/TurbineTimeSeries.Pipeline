@@ -33,6 +33,7 @@ class TrainTests(unittest.TestCase):
         query = (MachineDataStore(config_path)
                  .query(package_model_config.model_number, '10min')
                  .not_null(package_model_config.indexes)
+                 .psn(34)
                  .exclude_psn([44, 52, 54, 70]))
 
         pipeline = cluster_distribution(package_model_config, query, export_store)

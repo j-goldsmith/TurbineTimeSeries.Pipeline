@@ -2,7 +2,7 @@ from .config import load_config
 import glob
 import re
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, engine_from_config
 from sqlalchemy.inspection import inspect
 from sqlalchemy.sql.elements import quoted_name
 import os
@@ -240,7 +240,7 @@ class MachineDataQuery (QueryCache):
         else:
             self.resultsFromCache = False
             connection = self.sql.connect()
-            results = self._query_to_df(connection.execute(q))
+            results = self._query_to_df(connection.execution_options(stream_results=True).execute(q))
             connection.close()
             self._cache(q, results)
             return results
@@ -253,7 +253,11 @@ class MachineDataStore:
         if 'postgres_connection_url' not in self.config.keys():
             raise Exception('No SQL connection in config '+ config_path)
 
-        self.sql = create_engine(self.config['postgres_connection_url'])
+        config = {
+            "sqlalchemy.url": self.config['postgres_connection_url'],
+            "sqlalchemy.server_side_cursors": True,
+        }
+        self.sql = engine_from_config(config)
         self._cache_dir = self.config['cache_dir']
 
     def is_connectable(self):

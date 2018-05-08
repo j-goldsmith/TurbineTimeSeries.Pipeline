@@ -37,6 +37,11 @@ def pkl_save(filename):
 
     return run
 
+def pkl_save_cluster(filename):
+    def run(transformation, x, y):
+         transformation.exporter.save_pkl(transformation.cluster, filename)
+
+    return run
 
 def png_pca_variance_explained_curve(transformation, x, y):
     fig = plt.figure(0)

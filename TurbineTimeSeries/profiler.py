@@ -7,8 +7,8 @@ class Profiler:
 
     def start(self, transformation, event_name):
         with open('log', 'a') as f:
-            f.write(transformation.type() + ',start,' + event_name + ',' + str(datetime.now()))
+            f.write(str(datetime.now())+','+transformation.type() + ',start,' + event_name + '\n')
 
     def end(self, transformation, event_name):
         with open('log', 'a') as f:
-            f.write(transformation.type() + ',end,' + event_name + ',' + str(datetime.now()))
+            f.write(str(datetime.now())+','+transformation.type() + ',end,' + event_name + '\n')

@@ -18,7 +18,8 @@ from TurbineTimeSeries.exports import (
     csv_cleaned_data,
     pkl_save,
     png_cluster_grid,
-    png_cluster_distribution
+    png_cluster_distribution,
+    pkl_save_cluster
 )
 
 
@@ -42,6 +43,7 @@ def cluster_distribution(package_model_config, data_query, exporter, verbose=Fal
          ),
         ('KMeans', KMeansLabels(exporter=exporter, n_clusters=150).after_transform([
             pkl_save('model2_30min_partition_clusters'),
+            pkl_save_cluster('model2_30min_partition_cluster_obj'),
             png_cluster_grid(package_model_config),
            png_cluster_distribution(package_model_config)
         ])),
