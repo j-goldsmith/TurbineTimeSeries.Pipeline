@@ -44,7 +44,9 @@ def cluster_distribution(package_model_config, data_query, exporter, verbose=Fal
             pkl_save('model2_30min_partition_clusters'),
             png_cluster_grid(package_model_config),
            png_cluster_distribution(package_model_config)
-        ]))
+        ])),
+        ('Flatten', FlattenPartitionedTime(exporter=exporter).after_transform([
+            pkl_save('model2_30min_partition_clusters_flattened')]))
     ])
 
     def exec():

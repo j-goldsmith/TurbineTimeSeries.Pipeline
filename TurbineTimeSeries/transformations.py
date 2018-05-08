@@ -75,34 +75,44 @@ class Transformation(ABC):
 
     def fit(self, x, y=None):
 
-        # self.profiler.start(self,'before fit')
+        self.profiler.start(self, 'before fit')
         self._exec_before_fit(x, y)
-        # self.profiler.end('before fit')
+        self.profiler.end(self, 'before fit')
 
-        # self.profiler.start('fit')
+        self.profiler.start(self,'fit')
         self._fit(x, y)
-        # self.profiler.end('fit')
+        self.profiler.end(self, 'fit')
 
-        # self.profiler.start('after fit')
+        self.profiler.start(self, 'after fit')
         self._exec_after_fit(x, y)
-        # self.profiler.stop('after fit')
+        self.profiler.end(self, 'after fit')
 
         return self
 
     def transform(self, x):
+        self.profiler.start(self, 'before transform')
         self._exec_before_transform(x)
+        self.profiler.end(self, 'before transform')
+
         if self._from_cache is False:
+            self.profiler.start(self, 'transform')
             self.transformed = self._transform(x)
+            self.profiler.end(self, 'transform')
         else:
-            print('from cache')
+            self.profiler.start(self, 'transform from cache')
             self.transformed = self._get_cached(self._from_cache)
+            self.profiler.end(self, 'transform from cache')
+
+        self.profiler.start(self, 'after transform')
         self._exec_after_transform(x)
+        self.profiler.end(self, 'after transform')
+
         return self.transformed
 
     def _get_cached(self,name):
         return self.exporter.load_pkl(name)
 
-    def _type(self):
+    def type(self):
         return self.__class__.__name__
 
     def _fit(self, x, y=None):
