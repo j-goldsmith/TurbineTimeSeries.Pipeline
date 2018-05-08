@@ -1,5 +1,6 @@
 import unittest
 import pandas as pd
+from TurbineTimeSeries.packagemodels import PackageModels
 from TurbineTimeSeries.transformations import (
     DropNA,
     DropCols,
@@ -13,11 +14,15 @@ from TurbineTimeSeries.transformations import (
     PowerStepSize,
     StepSize
 )
+from TurbineTimeSeries.exports import (
+    png_cluster_distribution
+)
 from sklearn.pipeline import Pipeline
 from datetime import datetime,timedelta
 import numpy as np
-
-config_path = '..\.config'
+from TurbineTimeSeries.exports import Exporter
+from TurbineTimeSeries.config import load_config
+config_path = '..\\aws.config'
 
 
 class TransformationTests(unittest.TestCase):
@@ -159,9 +164,12 @@ class TransformationTests(unittest.TestCase):
             ]
         })
         data.set_index(['psn', 'timestamp'], inplace=True)
+        package_model_config = PackageModels[2]
+        config = load_config(config_path)
+        export_store = Exporter(config)
         pipeline = Pipeline([
             ('DropNA', DropNA()),
-            ('KMeans', KMeansLabels(n_clusters=3))])
+            ('KMeans', KMeansLabels(n_clusters=3, exporter=export_store).after_transform([png_cluster_distribution(package_model_config)]))])
         transformed = pipeline.fit_transform(data)
         print(transformed)
         #self.assertEqual(transformed.index[0],(1, pd.Timestamp('2017-01-01 00:10:00'), pd.Timestamp('2017-01-01 00:20:00'), np.nan))
@@ -171,7 +179,7 @@ class TransformationTests(unittest.TestCase):
         data = pd.DataFrame({
             'a': [1, 0, -2, 4, 5, 2, 3, 4, 5, 6, 7],
             'b': [1, 4, 3, 6, 8, 9, 7, 8, 9, 0, 1],
-            'c': [None, 3, None, 2, 1, 0, 1, 2, 3, 4, 5],
+            'c': [1, 3, 2, 2, 1, 0, 1, 2, 3, 4, 5],
             'd': [6, 4, 3, 3, 7, 8, 4, 5, 6, 7, 8],
             'psn': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
             'timestamp': [
@@ -188,11 +196,13 @@ class TransformationTests(unittest.TestCase):
                 datetime(2017, 1, 1, 1, 50)
             ]
         })
-        data.set_index(['psn', 'timestamp'], inplace=True)
+        data.set_index(['psn','timestamp'], inplace=True)
         pipeline = Pipeline([('PartitionTime', PartitionByTime(col='a', partition_span=timedelta(minutes=30)))])
         transformed = pipeline.fit_transform(data)
-        self.assertEqual(transformed.index[0],(1, pd.Timestamp('2017-01-01 00:10:00'), pd.Timestamp('2017-01-01 00:20:00'), np.nan))
-        self.assertEqual(transformed.index[1],(1, pd.Timestamp('2017-01-01 00:30:00'), pd.Timestamp('2017-01-01 00:40:00'), pd.Timestamp('2017-01-01 00:50:00')))
+        print(transformed)
+        print(transformed.values[0])
+        self.assertEqual(transformed.index[0],(1, pd.Timestamp('2017-01-01 00:30:00'), pd.Timestamp('2017-01-01 00:40:00'), pd.Timestamp('2017-01-01 00:50:00')))
+        self.assertEqual(np.array_equal(transformed.values[0], (-2, 4, 5)), True)
 
     def test_time_index_round(self):
         data = pd.DataFrame({
@@ -285,7 +295,7 @@ class TransformationTests(unittest.TestCase):
         data = pd.DataFrame({
             'a': [1, 0, -2, 4, 5, 2, 3, 4, 5, 6, 7],
             'b': [1, 4, 400, 6, 2, 2, 3, 8, 9, 2, 4],
-            'c': [2, 3, 7, 2, 1, 0, 1, 2, 3, 400, 3],
+            'c': [2, 3, 7, 2, 1, 0, 1, 2, 3, 4000, 3],
             'd': [6, 4, 4, 3, 7, 8, 4, 5, 1, 2, 200],
             'psn': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
             'timestamp': [

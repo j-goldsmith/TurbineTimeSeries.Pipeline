@@ -1,9 +1,9 @@
 class Profiler:
-    def __init__(self):
+    def __init__(self, verbose=False):
         pass
 
-    def start(self,event_name):
+    def start(self, transformation, event_name):
         pass
 
-    def end(self, event_name):
+    def end(self, transformation, event_name):
         pass

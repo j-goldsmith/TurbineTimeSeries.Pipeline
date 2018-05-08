@@ -18,7 +18,7 @@ def merge_transformed_features(raw, transformed):
 
 
 class Transformation(ABC):
-    def __init__(self, exporter=None, profiler=None):
+    def __init__(self, exporter=None, profiler=None, from_cache=False):
         super().__init__()
         self.transformed = None
         self.exporter = exporter
@@ -28,6 +28,8 @@ class Transformation(ABC):
 
         self._before_transform_funcs = []
         self._after_transform_funcs = []
+
+        self._from_cache = from_cache
 
     def _set_hook(self, callbacks, new_funcs):
         if isinstance(new_funcs, list):
@@ -73,7 +75,7 @@ class Transformation(ABC):
 
     def fit(self, x, y=None):
 
-        # self.profiler.start('before fit')
+        # self.profiler.start(self,'before fit')
         self._exec_before_fit(x, y)
         # self.profiler.end('before fit')
 
@@ -89,9 +91,19 @@ class Transformation(ABC):
 
     def transform(self, x):
         self._exec_before_transform(x)
-        self.transformed = self._transform(x)
+        if self._from_cache is False:
+            self.transformed = self._transform(x)
+        else:
+            print('from cache')
+            self.transformed = self._get_cached(self._from_cache)
         self._exec_after_transform(x)
         return self.transformed
+
+    def _get_cached(self,name):
+        return self.exporter.load_pkl(name)
+
+    def _type(self):
+        return self.__class__.__name__
 
     def _fit(self, x, y=None):
         return self
@@ -189,8 +201,8 @@ class DropSparseCols(Transformation):
 
 class PartitionByTime(Transformation):
     def __init__(self, col, partition_span=timedelta(minutes=30), point_spacing=timedelta(minutes=10),
-                 only_complete_partitions=True):
-        Transformation.__init__(self)
+                 only_complete_partitions=True, exporter=None, from_cache=False):
+        Transformation.__init__(self, exporter=exporter, from_cache=from_cache)
         self._span = partition_span
         self._point_spacing = point_spacing
         self._only_complete = only_complete_partitions
@@ -211,7 +223,7 @@ class PartitionByTime(Transformation):
     def _transform(self, data):
         segments = []
         indexes = []
-
+        psn_index_first = data.index.names.index('psn') < data.index.names.index('timestamp')
         for psn, psn_data in data.groupby('psn'):
             g = groupby([x[psn_data.index.names.index('timestamp')] for x in psn_data.index], key=self._get_key)
             for key, timestamps in g:
@@ -221,9 +233,17 @@ class PartitionByTime(Transformation):
 
                 timestamps = sorted(timestamps)
 
-                segments.append([x for x in psn_data[self._col].loc[[(t, psn) for t in timestamps]]])
+                segments.append([
+                    x
+                    for x in psn_data[self._col].loc[
+                     [
+                         (psn,t) if psn_index_first else (t, psn)
+                         for t in timestamps
+                     ]]])
+
                 new_index = [psn]
                 new_index.extend(timestamps)
+
                 indexes.append(tuple(new_index))
 
         index_names = ['psn']
@@ -256,16 +276,17 @@ class FlattenPartitionedTime(Transformation):
 
 
 class KMeansLabels(Transformation):
-    def __init__(self, exporter=None, *args, **kwargs):
+    def __init__(self, exporter=None,n_clusters=3, *args, **kwargs):
         Transformation.__init__(self, exporter)
-        self._kmeans = cluster.KMeans(*args, **kwargs)
+        self.n_clusters = n_clusters
+        self.cluster = cluster.KMeans(n_clusters, *args, **kwargs)
 
     def _fit(self, x, y=None):
         return self
 
     def _transform(self, data):
-        self._kmeans.fit(data)
-        label_df = pd.DataFrame(self._kmeans.labels_, index=data.index, columns=['cluster_label'])
+        self.cluster.fit(data)
+        label_df = pd.DataFrame(self.cluster.labels_, index=data.index, columns=['cluster_label'])
         return label_df
 
 
@@ -330,13 +351,10 @@ class StepSize(Transformation):
             min_dps = self._rolling_days * self._min_points_per_day
             avgs = df.rolling(rollings_days_str, min_periods=min_dps).mean()
             stdevs = df.rolling(rollings_days_str, min_periods=min_dps).std()
-            print(avgs)
-            print(stdevs)
             ## create low and high cutoffs
             highcutoff = avgs + self._threshold * stdevs
             lowcutoff = avgs - self._threshold * stdevs
-            print(highcutoff)
-            print(lowcutoff)
+
             ## build return df
             highs = df > highcutoff  ## True if above high cutoff
             lows = df < lowcutoff  ## True if below low cutoff
@@ -373,11 +391,20 @@ class PowerStepSize(Transformation):
 
 
 class EngineShutdownLabels(Transformation):
-    def __init__(self):
+    def __init__(self, eng_st_col='sum_eng_st'):
         Transformation.__init__(self)
+        self._eng_st_col = eng_st_col
 
     def _fit(self,x,y=None):
         return self
 
     def _transform(self, data):
-        return data
+        shutdown_df = pd.DataFrame(columns=['shutdown_flag'])
+        shutdown_df['shutdown_flag'] = 0
+        for psn, tempdf in data.groupby('psn'):
+            shutdown_flag = np.diff(tempdf[self._eng_st_col])
+            tempdf['shutdown_flag'] = np.array(np.append(shutdown_flag, [0]), dtype=bool)  ## cast everything to boolean
+            # print(tempdf['shutdown_flag'])
+            shutdown_df = shutdown_df.append(tempdf['shutdown_flag'].to_frame())
+        shutdown_df.index = pd.MultiIndex.from_tuples(shutdown_df.index, names=data.index.names)
+        return shutdown_df
