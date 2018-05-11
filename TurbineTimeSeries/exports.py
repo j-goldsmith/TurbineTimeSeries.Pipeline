@@ -13,7 +13,7 @@ class Exporter:
         fig.savefig(os.path.join(self.export_dir, name))
 
     def save_df(self, df, name):
-        name = name+'.csv'
+        name = name + '.csv'
         df.to_csv(os.path.join(self.export_dir, name))
 
     def save_pkl(self, df, name):
@@ -33,15 +33,17 @@ def csv_reduced_data(transformation, x, y):
 
 def pkl_save(filename):
     def run(transformation, x, y):
-         transformation.exporter.save_pkl(x, filename)
+        transformation.exporter.save_pkl(transformation.transformed, filename)
 
     return run
+
 
 def pkl_save_cluster(filename):
     def run(transformation, x, y):
-         transformation.exporter.save_pkl(transformation.cluster, filename)
+        transformation.exporter.save_pkl(transformation.cluster, filename)
 
     return run
+
 
 def png_pca_variance_explained_curve(transformation, x, y):
     fig = plt.figure(0)
@@ -61,7 +63,6 @@ def png_pca_eigenvector_scatter_plot(transformation, x, y):
 
 
 def png_cluster_distribution(package_model_config):
-
     def run(transformation, x, y):
         label_counts = transformation.transformed['cluster_label'].value_counts().sort_values(ascending=False)
         labels_sorted_by_freq = list(label_counts.keys())
@@ -75,14 +76,14 @@ def png_cluster_distribution(package_model_config):
         plt.suptitle("Cluster Distributions for Eigenvector 0, 30 Minute Profiles".format())
         plt.grid("on")
 
-        transformation.exporter.save_fig(fig,"model_kmeans_eig_30_min_cluster_distribution")
+        transformation.exporter.save_fig(fig, "model_kmeans_eig_30_min_cluster_distribution")
         plt.show()
+
     return run
 
 
 def png_cluster_grid(package_model_config):
-
-    def run(transformation,x,y):
+    def run(transformation, x, y):
         plt.rcParams["figure.figsize"] = (15, 15)
 
         fig = plt.figure(0)
@@ -93,7 +94,8 @@ def png_cluster_grid(package_model_config):
         labels_sorted_by_freq = list(label_counts.keys())
 
         for i, c in enumerate(labels_sorted_by_freq):
-            cluster_data = [x.iloc[j] for j in range(len(transformation.cluster.labels_)) if transformation.cluster.labels_[j] == c]
+            cluster_data = [x.iloc[j] for j in range(len(transformation.cluster.labels_)) if
+                            transformation.cluster.labels_[j] == c]
 
             col = i % 15
             row = row if col > 0 else row + 1
@@ -107,6 +109,8 @@ def png_cluster_grid(package_model_config):
                 shared_ax = ax
 
         plt.suptitle("Model {} Eigenvector 1, 30 Minute Profiles".format(package_model_config.model_number))
-        transformation.exporter.save_fig(fig,"model{}_kmeans_{}_30_min_cluster_grid.png".format(package_model_config.model_number, transformation.n_clusters))
+        transformation.exporter.save_fig(fig, "model{}_kmeans_{}_30_min_cluster_grid.png".format(
+            package_model_config.model_number, transformation.n_clusters))
         plt.close()
+
     return run

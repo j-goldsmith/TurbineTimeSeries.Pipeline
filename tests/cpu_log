@@ -1,0 +1,114 @@
+42564.8125,DropCols,start,before fit
+42564.828125,DropCols,start,before fit
+42564.84375,DropCols,start,fit
+42564.890625,DropCols,start,fit
+42564.890625,DropCols,start,after fit
+42564.90625,DropCols,start,after fit
+42564.921875,DropCols,start,before transform
+42564.9375,DropCols,start,before transform
+42564.953125,DropCols,start,transform
+42565.125,DropCols,start,transform
+42565.15625,DropCols,start,after transform
+42565.15625,DropCols,start,after transform
+42565.171875,DropSparseCols,start,before fit
+42565.1875,DropSparseCols,start,before fit
+42565.203125,DropSparseCols,start,fit
+42565.234375,DropSparseCols,start,fit
+42565.25,DropSparseCols,start,after fit
+42565.28125,DropSparseCols,start,after fit
+42565.3125,DropSparseCols,start,before transform
+42565.328125,DropSparseCols,start,before transform
+42565.359375,DropSparseCols,start,transform
+42567.015625,DropCols,start,before transform
+42567.03125,DropCols,start,before transform
+42567.046875,DropCols,start,transform
+42567.15625,DropCols,start,transform
+42567.1875,DropCols,start,after transform
+42567.203125,DropCols,start,after transform
+42567.234375,DropSparseCols,start,transform
+42567.25,DropSparseCols,start,after transform
+42567.28125,DropSparseCols,start,after transform
+42567.296875,DropNA,start,before fit
+42567.3125,DropNA,start,before fit
+42567.328125,DropNA,start,fit
+42567.359375,DropNA,start,fit
+42567.375,DropNA,start,after fit
+42567.390625,DropNA,start,after fit
+42567.421875,DropNA,start,before transform
+42567.453125,DropNA,start,before transform
+42567.46875,DropNA,start,transform
+42568.046875,DropNA,start,transform
+42568.0625,DropNA,start,after transform
+42568.078125,DropNA,start,after transform
+42568.109375,RoundTimestampIndex,start,before fit
+42568.125,RoundTimestampIndex,start,before fit
+42568.140625,RoundTimestampIndex,start,fit
+42568.171875,RoundTimestampIndex,start,fit
+42568.1875,RoundTimestampIndex,start,after fit
+42568.234375,RoundTimestampIndex,start,after fit
+42568.25,RoundTimestampIndex,start,before transform
+42568.265625,RoundTimestampIndex,start,before transform
+42568.28125,RoundTimestampIndex,start,transform
+42920.625,RoundTimestampIndex,start,transform
+42920.640625,RoundTimestampIndex,start,after transform
+42920.65625,RoundTimestampIndex,start,after transform
+42920.6875,StandardScaler,start,before fit
+42920.703125,StandardScaler,start,before fit
+42920.71875,StandardScaler,start,fit
+42922.359375,StandardScaler,start,fit
+42922.375,StandardScaler,start,after fit
+42922.40625,StandardScaler,start,after fit
+42922.46875,StandardScaler,start,before transform
+42922.53125,StandardScaler,start,before transform
+42922.546875,StandardScaler,start,transform
+42923.203125,StandardScaler,start,transform
+42923.21875,StandardScaler,start,after transform
+42923.265625,StandardScaler,start,after transform
+42923.3125,PCA,start,before fit
+42923.328125,PCA,start,before fit
+42923.34375,PCA,start,fit
+42938.859375,PCA,start,fit
+42938.875,PCA,start,after fit
+42938.90625,PCA,start,after fit
+42938.921875,PCA,start,before transform
+42938.953125,PCA,start,before transform
+42938.96875,PCA,start,transform
+42945.1875,PCA,start,transform
+42945.1875,PCA,start,after transform
+42946.4375,PCA,start,after transform
+42946.46875,PartitionByTime,start,before fit
+42946.484375,PartitionByTime,start,before fit
+42946.515625,PartitionByTime,start,fit
+42946.53125,PartitionByTime,start,fit
+42946.546875,PartitionByTime,start,after fit
+42946.578125,PartitionByTime,start,after fit
+42946.59375,PartitionByTime,start,before transform
+42946.625,PartitionByTime,start,before transform
+42946.625,PartitionByTime,start,transform
+43930.71875,PartitionByTime,start,transform
+43930.765625,PartitionByTime,start,after transform
+43931.0625,PartitionByTime,start,after transform
+43931.078125,KMeansLabels,start,before fit
+43931.09375,KMeansLabels,start,before fit
+43931.15625,KMeansLabels,start,fit
+43931.21875,KMeansLabels,start,fit
+43931.265625,KMeansLabels,start,after fit
+43931.328125,KMeansLabels,start,after fit
+43931.390625,KMeansLabels,start,before transform
+43931.40625,KMeansLabels,start,before transform
+43931.46875,KMeansLabels,start,transform
+44794.96875,KMeansLabels,start,transform
+44795.0,KMeansLabels,start,after transform
+45271.046875,KMeansLabels,start,after transform
+45271.09375,FlattenPartitionedTime,start,before fit
+45271.125,FlattenPartitionedTime,start,before fit
+45271.375,FlattenPartitionedTime,start,fit
+45271.390625,FlattenPartitionedTime,start,fit
+45271.390625,FlattenPartitionedTime,start,after fit
+45271.40625,FlattenPartitionedTime,start,after fit
+45271.46875,FlattenPartitionedTime,start,before transform
+45271.484375,FlattenPartitionedTime,start,before transform
+45271.5,FlattenPartitionedTime,start,transform
+45382.390625,FlattenPartitionedTime,start,transform
+45382.4375,FlattenPartitionedTime,start,after transform
+45382.46875,FlattenPartitionedTime,start,after transform

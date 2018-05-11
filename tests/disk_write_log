@@ -1,0 +1,114 @@
+3349,DropCols,start,before fit
+8550461440,DropCols,end,before fit
+3349,DropCols,start,fit
+8545480704,DropCols,end,fit
+3349,DropCols,start,after fit
+8545452032,DropCols,end,after fit
+3349,DropCols,start,before transform
+8545570816,DropCols,end,before transform
+3349,DropCols,start,transform
+7670276096,DropCols,end,transform
+3349,DropCols,start,after transform
+7669899264,DropCols,end,after transform
+3349,DropSparseCols,start,before fit
+7668297728,DropSparseCols,end,before fit
+3349,DropSparseCols,start,fit
+7667802112,DropSparseCols,end,fit
+3349,DropSparseCols,start,after fit
+7667486720,DropSparseCols,end,after fit
+3349,DropSparseCols,start,before transform
+7667175424,DropSparseCols,end,before transform
+3349,DropSparseCols,start,transform
+3350,DropCols,start,before transform
+7663120384,DropCols,end,before transform
+3350,DropCols,start,transform
+6784610304,DropCols,end,transform
+3350,DropCols,start,after transform
+6784552960,DropCols,end,after transform
+6784397312,DropSparseCols,end,transform
+3350,DropSparseCols,start,after transform
+6784569344,DropSparseCols,end,after transform
+3350,DropNA,start,before fit
+6784442368,DropNA,end,before fit
+3350,DropNA,start,fit
+6784417792,DropNA,end,fit
+3350,DropNA,start,after fit
+6783807488,DropNA,end,after fit
+3350,DropNA,start,before transform
+6784954368,DropNA,end,before transform
+3350,DropNA,start,transform
+5877624832,DropNA,end,transform
+3350,DropNA,start,after transform
+5877534720,DropNA,end,after transform
+3350,RoundTimestampIndex,start,before fit
+5877608448,RoundTimestampIndex,end,before fit
+3350,RoundTimestampIndex,start,fit
+5877997568,RoundTimestampIndex,end,fit
+3350,RoundTimestampIndex,start,after fit
+5878038528,RoundTimestampIndex,end,after fit
+3350,RoundTimestampIndex,start,before transform
+5878157312,RoundTimestampIndex,end,before transform
+3350,RoundTimestampIndex,start,transform
+5814480896,RoundTimestampIndex,end,transform
+3357,RoundTimestampIndex,start,after transform
+5814812672,RoundTimestampIndex,end,after transform
+3357,StandardScaler,start,before fit
+5814804480,StandardScaler,end,before fit
+3357,StandardScaler,start,fit
+5835632640,StandardScaler,end,fit
+3357,StandardScaler,start,after fit
+5842137088,StandardScaler,end,after fit
+3357,StandardScaler,start,before transform
+5840285696,StandardScaler,end,before transform
+3357,StandardScaler,start,transform
+4933517312,StandardScaler,end,transform
+3358,StandardScaler,start,after transform
+4934582272,StandardScaler,end,after transform
+3358,PCA,start,before fit
+4934389760,PCA,end,before fit
+3358,PCA,start,fit
+5355880448,PCA,end,fit
+3361,PCA,start,after fit
+5374013440,PCA,end,after fit
+3362,PCA,start,before transform
+5375332352,PCA,end,before transform
+3362,PCA,start,transform
+4472668160,PCA,end,transform
+3365,PCA,start,after transform
+4486660096,PCA,end,after transform
+3377,PartitionByTime,start,before fit
+4487036928,PartitionByTime,end,before fit
+3377,PartitionByTime,start,fit
+4487331840,PartitionByTime,end,fit
+3377,PartitionByTime,start,after fit
+4486881280,PartitionByTime,end,after fit
+3377,PartitionByTime,start,before transform
+4487606272,PartitionByTime,end,before transform
+3377,PartitionByTime,start,transform
+5879451648,PartitionByTime,end,transform
+3417,PartitionByTime,start,after transform
+5857361920,PartitionByTime,end,after transform
+3417,KMeansLabels,start,before fit
+5857386496,KMeansLabels,end,before fit
+3417,KMeansLabels,start,fit
+5857427456,KMeansLabels,end,fit
+3417,KMeansLabels,start,after fit
+5857218560,KMeansLabels,end,after fit
+3417,KMeansLabels,start,before transform
+5856825344,KMeansLabels,end,before transform
+3417,KMeansLabels,start,transform
+7486390272,KMeansLabels,end,transform
+3422,KMeansLabels,start,after transform
+2039713792,KMeansLabels,end,after transform
+3494,FlattenPartitionedTime,start,before fit
+2040180736,FlattenPartitionedTime,end,before fit
+3494,FlattenPartitionedTime,start,fit
+2040344576,FlattenPartitionedTime,end,fit
+3494,FlattenPartitionedTime,start,after fit
+2041020416,FlattenPartitionedTime,end,after fit
+3494,FlattenPartitionedTime,start,before transform
+2041200640,FlattenPartitionedTime,end,before transform
+3494,FlattenPartitionedTime,start,transform
+10102145024,FlattenPartitionedTime,end,transform
+3517,FlattenPartitionedTime,start,after transform
+10086166528,FlattenPartitionedTime,end,after transform

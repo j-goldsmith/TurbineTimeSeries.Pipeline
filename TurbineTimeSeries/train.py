@@ -35,13 +35,14 @@ def cluster_distribution(package_model_config, data_query, exporter, verbose=Fal
         ('StandardScaler', StandardScaler()),
         ('FleetwidePCA', PCA(exporter=exporter)
          .after_transform([
+            pkl_save('model2_pca_ncomponents20'),
             png_pca_variance_explained_curve,
             png_pca_eigenvalues_as_tags])),
         ('Partition', PartitionByTime(
             col=0,
             partition_span=timedelta(minutes=30), exporter=exporter).after_transform([pkl_save('model2_30min_partitions')])
          ),
-        ('KMeans', KMeansLabels(exporter=exporter, n_clusters=150).after_transform([
+        ('KMeans', KMeansLabels(exporter=exporter, n_clusters=150, n_jobs=2).after_transform([
             pkl_save('model2_30min_partition_clusters'),
             pkl_save_cluster('model2_30min_partition_cluster_obj'),
             png_cluster_grid(package_model_config),

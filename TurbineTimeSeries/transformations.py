@@ -165,7 +165,7 @@ class PCA(Transformation):
 
         self.transformed = pd.DataFrame(
             self.pca.transform(masked),
-            index=masked.index)
+            index=masked.index).loc[:,0:20]
 
         return self.transformed
 
@@ -260,10 +260,11 @@ class PartitionByTime(Transformation):
         for i in range(len(max(segments, key=len))):
             index_names.append('t' + str(i))
 
-        return pd.DataFrame(
+        self.transformed = pd.DataFrame(
             segments,
             index=pd.MultiIndex.from_tuples(indexes, names=index_names)
         )
+        return self.transformed
 
 
 class FlattenPartitionedTime(Transformation):
@@ -280,34 +281,35 @@ class FlattenPartitionedTime(Transformation):
             for i in range(1, len(k)):
                 indexes.append((k[0], k[i]))
                 entries.append(v)
-
-        return pd.DataFrame(entries, columns=data.columns,
+        self.transformed = pd.DataFrame(entries, columns=data.columns,
                             index=pd.MultiIndex.from_tuples(indexes, names=['psn', 'timestamp']))
+        return self.transformed
 
 
 class KMeansLabels(Transformation):
     def __init__(self, exporter=None,n_clusters=3, *args, **kwargs):
         Transformation.__init__(self, exporter)
         self.n_clusters = n_clusters
-        self.cluster = cluster.KMeans(n_clusters, *args, **kwargs)
+        self.cluster = cluster.KMeans(n_clusters,random_state=0, *args, **kwargs)
 
     def _fit(self, x, y=None):
         return self
 
     def _transform(self, data):
         self.cluster.fit(data)
-        label_df = pd.DataFrame(self.cluster.labels_, index=data.index, columns=['cluster_label'])
-        return label_df
+        self.transformed = pd.DataFrame(self.cluster.labels_, index=data.index, columns=['cluster_label'])
+        return self.transformed
 
 
 class RoundTimestampIndex(Transformation):
     def __init__(self, to='10min'):
+        Transformation.__init__(self)
         self._to = to
 
-    def fit(self, x, y=None):
+    def _fit(self, x, y=None):
         return self
 
-    def transform(self, data):
+    def _transform(self, data):
         idx = data.index.tolist()
         timestamp_idx = data.index.names.index('timestamp')
         psn_idx = data.index.names.index('psn')
