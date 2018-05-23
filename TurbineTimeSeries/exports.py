@@ -12,9 +12,9 @@ class Exporter:
         name = name + '.png'
         fig.savefig(os.path.join(self.export_dir, name))
 
-    def save_df(self, df, name):
+    def save_df(self, df, name, index=True):
         name = name + '.csv'
-        df.to_csv(os.path.join(self.export_dir, name))
+        df.to_csv(os.path.join(self.export_dir, name), index=index)
 
     def save_pkl(self, df, name):
         pickle.dump(df, open(os.path.join(self.export_dir, name), 'wb'))
@@ -29,6 +29,79 @@ def csv_cleaned_data(transformation, x, y):
 
 def csv_reduced_data(transformation, x, y):
     transformation.exporter.save_df(x, "cleaned_data")
+
+
+def csv_save(filename, round_to=None):
+    def run(transformation, x, y):
+        if round_to is None:
+            t = transformation.transformed
+        else:
+            t = transformation.transformed.round(round_to)
+        transformation.exporter.save_df(t, filename)
+
+    return run
+
+
+def csv_save_by_psn(filename, round_to=None):
+    def run(transformation, x, y):
+        if round_to is None:
+            t = transformation.transformed
+        else:
+            t = transformation.transformed.round(round_to)
+
+        for psn, psn_data in t.groupby('psn'):
+            transformation.exporter.save_df(psn_data, filename + "_psn" + str(psn))
+
+    return run
+
+
+def csv_fields(filename):
+    def run(transformation, x, y):
+        transformation.exporter.save_df(
+            pd.DataFrame(transformation.transformed.columns.values, columns=['field']).sort_values(by='field'),
+            filename, index=False)
+
+    return run
+
+
+def csv_pca_by_psn(filename, n_components=5, round_to=None):
+    def run(transformation, x, y):
+        t = transformation.transformed.loc[:, ['pca_eig' + str(i) for i in range(n_components)]]
+
+        if isinstance(round_to, int):
+            t = t.round(round_to)
+
+        for psn, psn_data in t.groupby('psn'):
+            transformation.exporter.save_df(psn_data, filename + "_psn" + str(psn))
+
+    return run
+
+
+
+def csv_pca(filename, n_components=5, round_to=None):
+    def run(transformation, x, y):
+        t = transformation.transformed.loc[:, ['pca_eig' + str(i) for i in range(n_components)]]
+
+        if isinstance(round_to, int):
+            t = t.round(round_to)
+
+        transformation.exporter.save_df(
+            t,
+            filename,
+            index=True)
+
+    return run
+
+
+def csv_psn(filename):
+    def run(transformation, x, y):
+        transformation.exporter.save_df(
+            pd.DataFrame(transformation.transformed.reset_index()['psn'].unique(), columns=['psn']).sort_values(
+                by='psn'),
+            filename,
+            index=False)
+
+    return run
 
 
 def pkl_save(filename):

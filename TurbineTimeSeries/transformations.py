@@ -6,6 +6,7 @@ from datetime import timedelta, datetime
 from itertools import groupby
 from TurbineTimeSeries.profiler import Profiler
 
+
 def merge_transformed_features(raw, transformed):
     return (raw
             .reset_index()
@@ -79,7 +80,7 @@ class Transformation(ABC):
         self._exec_before_fit(x, y)
         self.profiler.end(self, 'before fit')
 
-        self.profiler.start(self,'fit')
+        self.profiler.start(self, 'fit')
         self._fit(x, y)
         self.profiler.end(self, 'fit')
 
@@ -109,7 +110,7 @@ class Transformation(ABC):
 
         return self.transformed
 
-    def _get_cached(self,name):
+    def _get_cached(self, name):
         return self.exporter.load_pkl(name)
 
     def type(self):
@@ -123,8 +124,8 @@ class Transformation(ABC):
 
 
 class StandardScaler(Transformation):
-    def __init__(self, feature_suffix='_scaled_', *args, **kwargs):
-        Transformation.__init__(self)
+    def __init__(self, feature_suffix='_scaled_', exporter=None, *args, **kwargs):
+        Transformation.__init__(self, exporter=exporter)
         self.scaler = preprocessing.StandardScaler(*args, **kwargs)
         self.feature_suffix = feature_suffix
 
@@ -142,11 +143,10 @@ class StandardScaler(Transformation):
 
 
 class PCA(Transformation):
-    def __init__(self, feature_suffix='_pca_', feature_mask=None, exporter=None, *args, **kwargs):
+    def __init__(self, feature_mask=None, exporter=None, *args, **kwargs):
         Transformation.__init__(self, exporter)
         self.pca = decomposition.PCA(*args, **kwargs)
         self.feature_mask = feature_mask
-        self.feature_suffix = feature_suffix
 
     def _mask(self, data):
         if self.feature_mask is None:
@@ -165,7 +165,8 @@ class PCA(Transformation):
 
         self.transformed = pd.DataFrame(
             self.pca.transform(masked),
-            index=masked.index).loc[:,0:20]
+            columns=['pca_eig'+str(i) for i in range(len(masked.columns))],
+            index=masked.index)
 
         return self.transformed
 
@@ -246,10 +247,10 @@ class PartitionByTime(Transformation):
                 segments.append([
                     x
                     for x in psn_data[self._col].loc[
-                     [
-                         (psn,t) if psn_index_first else (t, psn)
-                         for t in timestamps
-                     ]]])
+                        [
+                            (psn, t) if psn_index_first else (t, psn)
+                            for t in timestamps
+                        ]]])
 
                 new_index = [psn]
                 new_index.extend(timestamps)
@@ -282,15 +283,15 @@ class FlattenPartitionedTime(Transformation):
                 indexes.append((k[0], k[i]))
                 entries.append(v)
         self.transformed = pd.DataFrame(entries, columns=data.columns,
-                            index=pd.MultiIndex.from_tuples(indexes, names=['psn', 'timestamp']))
+                                        index=pd.MultiIndex.from_tuples(indexes, names=['psn', 'timestamp']))
         return self.transformed
 
 
 class KMeansLabels(Transformation):
-    def __init__(self, exporter=None,n_clusters=3, *args, **kwargs):
+    def __init__(self, exporter=None, n_clusters=3, *args, **kwargs):
         Transformation.__init__(self, exporter)
         self.n_clusters = n_clusters
-        self.cluster = cluster.KMeans(n_clusters,random_state=0, *args, **kwargs)
+        self.cluster = cluster.KMeans(n_clusters, random_state=0, *args, **kwargs)
 
     def _fit(self, x, y=None):
         return self
@@ -391,10 +392,10 @@ class PowerStepSize(Transformation):
     def _transform(self, data):
         finaldf = pd.DataFrame()
 
-        for psn,psn_data in data.groupby('psn'):
+        for psn, psn_data in data.groupby('psn'):
             df = psn_data[self._power_col].sort_index()
             df_shifted = df.shift(1)
-            percent_diff = (df_shifted - df)/df_shifted
+            percent_diff = (df_shifted - df) / df_shifted
             flags = abs(percent_diff) > self._step_size_threshold
 
             finaldf = finaldf.append(flags.to_frame())
@@ -407,7 +408,7 @@ class EngineShutdownLabels(Transformation):
         Transformation.__init__(self)
         self._eng_st_col = eng_st_col
 
-    def _fit(self,x,y=None):
+    def _fit(self, x, y=None):
         return self
 
     def _transform(self, data):
@@ -420,3 +421,32 @@ class EngineShutdownLabels(Transformation):
             shutdown_df = shutdown_df.append(tempdf['shutdown_flag'].to_frame())
         shutdown_df.index = pd.MultiIndex.from_tuples(shutdown_df.index, names=data.index.names)
         return shutdown_df
+
+class KinkFinderLabels(Transformation):
+
+    def __init__(self,n_clusters,cluster_transformation,threshold=.4, exporter=None):
+        Transformation.__init__(self,exporter=exporter)
+        self._threshold = threshold
+        self._n_clusters = n_clusters
+        self._cluster_transformation = cluster_transformation
+
+    def _fit(self,x,y=None):
+        return self
+
+    def _cluster_transient_labels(self):
+        kinked = np.zeros(self._n_clusters)
+        for i, cluster_mean in enumerate(self._cluster_transformation.cluster.cluster_centers_):
+            min_point = min(cluster_mean)
+            max_point = max(cluster_mean)
+            diff = (max_point - min_point)
+            change = diff / max_point
+            kinked[i] = (change > self._threshold) & (diff > 1)
+        return kinked
+
+    def _transform(self, data):
+        kinked = self._cluster_transient_labels()
+        a = [kinked[d] for d in data["cluster_label"]]
+        self.transformed = pd.DataFrame(a, columns=["kink_finder_label"],index=data.index)
+        return self.transformed
+
+
