@@ -446,7 +446,8 @@ class KinkFinderLabels(Transformation):
     def _transform(self, data):
         kinked = self._cluster_transient_labels()
         a = [kinked[d] for d in data["cluster_label"]]
-        self.transformed = pd.DataFrame(a, columns=["kink_finder_label"],index=data.index)
+        all_labels = pd.DataFrame(a, columns=["kink_finder_label"],index=data.index)
+        self.transformed = all_labels[all_labels["kink_finder_label"] == 1]
         return self.transformed
 
 

@@ -55,6 +55,26 @@ def csv_save_by_psn(filename, round_to=None):
     return run
 
 
+def csv_cluster_stats(filename):
+    def run(transformation, x, y):
+        cluster_stats = []
+        stdev_cols = [str(c) + '_stdev' for c in x.columns]
+        means_cols = [str(c) + '_mean' for c in x.columns]
+
+        for cluster_label, cluster_data in transformation.transformed.groupby('cluster_label'):
+            del cluster_data["cluster_label"]
+            result = cluster_data.join(x)
+            stdev = [d for d in result.std()]
+            means = [m for m in result.mean()]
+            cluster_stats.append(tuple([cluster_label] + stdev + means))
+
+        result_df = pd.DataFrame(cluster_stats, columns=['cluster_label'] + stdev_cols + means_cols).set_index(
+            'cluster_label')
+        transformation.exporter.save_df(result_df, filename)
+
+    return run
+
+
 def csv_fields(filename):
     def run(transformation, x, y):
         transformation.exporter.save_df(
@@ -75,7 +95,6 @@ def csv_pca_by_psn(filename, n_components=5, round_to=None):
             transformation.exporter.save_df(psn_data, filename + "_psn" + str(psn))
 
     return run
-
 
 
 def csv_pca(filename, n_components=5, round_to=None):
