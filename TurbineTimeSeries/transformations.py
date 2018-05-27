@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
+import os
 import numpy as np
+import pickle
 import pandas as pd
 from sklearn import decomposition, preprocessing, cluster
 from datetime import timedelta, datetime
@@ -122,7 +124,6 @@ class Transformation(ABC):
     def _transform(self, data):
         return data
 
-
 class StandardScaler(Transformation):
     def __init__(self, feature_suffix='_scaled_', exporter=None, *args, **kwargs):
         Transformation.__init__(self, exporter=exporter)
@@ -165,7 +166,7 @@ class PCA(Transformation):
 
         self.transformed = pd.DataFrame(
             self.pca.transform(masked),
-            columns=['pca_eig'+str(i) for i in range(len(masked.columns))],
+            columns=['pca_eig' + str(i) for i in range(len(masked.columns))],
             index=masked.index)
 
         return self.transformed
@@ -329,8 +330,8 @@ class RoundTimestampIndex(Transformation):
 
 
 class StepSize(Transformation):
-    def __init__(self, ignore_columns=None, std_threshold=5, rolling_days=1, min_points_per_day=24):
-        Transformation.__init__(self)
+    def __init__(self, exporter=None, ignore_columns=None, std_threshold=5, rolling_days=1, min_points_per_day=24):
+        Transformation.__init__(self, exporter=exporter)
         self._ignore_columns = ignore_columns
         self._threshold = std_threshold
         self._rolling_days = rolling_days
@@ -377,12 +378,14 @@ class StepSize(Transformation):
             returndf = returndf.reset_index().set_index(orig_index_cols)
             finaldf = finaldf.append(returndf)
 
-        return finaldf
+        finaldf = finaldf.rename(columns={x: x + '_stepsize_transient_label' for x in cols})
+
+        return finaldf[finaldf["pca_eig0_stepsize_transient_label"] == True]
 
 
 class PowerStepSize(Transformation):
-    def __init__(self, power_col='perf_pow', step_size_threshold=.25):
-        Transformation.__init__(self)
+    def __init__(self, power_col='perf_pow', exporter=None, step_size_threshold=.25):
+        Transformation.__init__(self, exporter=exporter)
         self._power_col = power_col
         self._step_size_threshold = step_size_threshold
 
@@ -399,7 +402,7 @@ class PowerStepSize(Transformation):
             flags = abs(percent_diff) > self._step_size_threshold
 
             finaldf = finaldf.append(flags.to_frame())
-
+        # self.transformed = finaldf[finaldf["perf_pow"] == True]
         return finaldf
 
 
@@ -422,15 +425,16 @@ class EngineShutdownLabels(Transformation):
         shutdown_df.index = pd.MultiIndex.from_tuples(shutdown_df.index, names=data.index.names)
         return shutdown_df
 
+
 class KinkFinderLabels(Transformation):
 
-    def __init__(self,n_clusters,cluster_transformation,threshold=.4, exporter=None):
-        Transformation.__init__(self,exporter=exporter)
+    def __init__(self, n_clusters, cluster_transformation, threshold=.4, exporter=None):
+        Transformation.__init__(self, exporter=exporter)
         self._threshold = threshold
         self._n_clusters = n_clusters
         self._cluster_transformation = cluster_transformation
 
-    def _fit(self,x,y=None):
+    def _fit(self, x, y=None):
         return self
 
     def _cluster_transient_labels(self):
@@ -446,8 +450,6 @@ class KinkFinderLabels(Transformation):
     def _transform(self, data):
         kinked = self._cluster_transient_labels()
         a = [kinked[d] for d in data["cluster_label"]]
-        all_labels = pd.DataFrame(a, columns=["kink_finder_label"],index=data.index)
+        all_labels = pd.DataFrame(a, columns=["kink_finder_label"], index=data.index)
         self.transformed = all_labels[all_labels["kink_finder_label"] == 1]
         return self.transformed
-
-

@@ -293,10 +293,7 @@ class TransformationTests(unittest.TestCase):
 
     def test_step_size(self):
         data = pd.DataFrame({
-            'a': [1, 0, -2, 4, 5, 2, 3, 4, 5, 6, 7],
-            'b': [1, 4, 400, 6, 2, 2, 3, 8, 9, 2, 4],
-            'c': [2, 3, 7, 2, 1, 0, 1, 2, 3, 4000, 3],
-            'd': [6, 4, 4, 3, 7, 8, 4, 5, 1, 2, 200],
+            'pca_eig0': [6, 4, 4, 3, 7, 8, 4, 5, 1, 2, 200],
             'psn': [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
             'timestamp': [
                 datetime(2017, 1, 1, 0, 10),
@@ -318,3 +315,18 @@ class TransformationTests(unittest.TestCase):
         ])
         transformed = pipeline.fit_transform(data)
         print(transformed)
+
+    def test_pandas_col(self):
+        data = pd.DataFrame({
+            'a': [True, False, True, True, True],
+            'timestamp': [
+                datetime(2017, 1, 1, 0, 10),
+                datetime(2017, 1, 1, 0, 20),
+                datetime(2017, 1, 1, 0, 30),
+                datetime(2017, 1, 1, 0, 40),
+                datetime(2017, 1, 1, 0, 50)
+            ]
+        })
+        data.set_index(['timestamp'], inplace=True)
+        data = data[data["a"] == True]
+        print(data)
