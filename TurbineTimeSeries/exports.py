@@ -2,11 +2,15 @@ from matplotlib import pyplot as plt
 import pandas as pd
 import os
 import pickle
+from datetime import datetime
 
 
 class Exporter:
     def __init__(self, config):
-        self.export_dir = config['export_dir']
+        self.export_root = config['export_dir']
+        self.export_dir = os.path.join(config['export_dir'],datetime.now().strftime("%Y-%m-%d_%H%M%S"))
+        if not os.path.exists(self.export_dir):
+            os.makedirs(self.export_dir)
 
     def save_fig(self, fig, name):
         name = name + '.png'
@@ -20,7 +24,7 @@ class Exporter:
         pickle.dump(df, open(os.path.join(self.export_dir, name), 'wb'))
 
     def load_pkl(self, name):
-        return pickle.load(open(os.path.join(self.export_dir, name), 'rb'))
+        return pickle.load(open(os.path.join(self.export_root, name), 'rb'))
 
 
 def csv_cleaned_data(transformation, x, y):
@@ -54,6 +58,27 @@ def csv_save_by_psn(filename, round_to=None):
 
     return run
 
+
+
+def csv_cluster_distribution_by_psn(filename):
+    def run(transformation, x, y):
+        cluster_counts = transformation.transformed.groupby(['psn', 'cluster_label']).size()
+
+        cluster_pcts = cluster_counts.groupby(level=0).apply(lambda x: x / x.sum()).to_frame(name='percent')
+        cluster_minutes = cluster_counts.groupby(level=0).apply(lambda x: x * 10).to_frame(name='minutes')
+        cluster_stats = cluster_pcts.join(cluster_minutes)
+
+        for psn, psn_data in cluster_stats.groupby('psn'):
+            transformation.exporter.save_df(psn_data, filename + "_psn" + str(psn))
+
+    return run
+
+
+def csv_inertia(filename):
+    def run(transformation,x,y):
+        with open(os.path.join(transformation.exporter.export_dir,filename+".csv"), 'a+') as filehandle:
+            filehandle.write(str(transformation.n_clusters)+","+str(transformation.cluster.inertia_)+"\n")
+    return run
 
 def csv_cluster_stats(filename):
     def run(transformation, x, y):

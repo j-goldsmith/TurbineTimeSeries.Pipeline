@@ -6,18 +6,8 @@ import pandas as pd
 from sklearn import decomposition, preprocessing, cluster
 from datetime import timedelta, datetime
 from itertools import groupby
+import hdbscan
 from TurbineTimeSeries.profiler import Profiler
-
-
-def merge_transformed_features(raw, transformed):
-    return (raw
-            .reset_index()
-            .merge(
-        transformed,
-        left_index=True,
-        right_index=True
-    )
-            .set_index(raw.index.names))
 
 
 class Transformation(ABC):
@@ -124,6 +114,7 @@ class Transformation(ABC):
     def _transform(self, data):
         return data
 
+
 class StandardScaler(Transformation):
     def __init__(self, feature_suffix='_scaled_', exporter=None, *args, **kwargs):
         Transformation.__init__(self, exporter=exporter)
@@ -221,8 +212,7 @@ class PartitionByTime(Transformation):
         self._n_complete = int(partition_span.seconds / point_spacing.seconds)
         self._col = col
 
-    def _get_key(self, d):
-        t = d
+    def _get_key(self, t):
         if self._span.seconds < 3600:
             k = t + timedelta(minutes=-(t.minute % (self._span.seconds / 60.0)))
         else:
@@ -269,6 +259,60 @@ class PartitionByTime(Transformation):
         return self.transformed
 
 
+class PartitionBy20min(Transformation):
+    def __init__(self, col, point_spacing=timedelta(minutes=10),
+                 only_complete_partitions=True, exporter=None, from_cache=False):
+        Transformation.__init__(self, exporter=exporter, from_cache=from_cache)
+        self._span = timedelta(minutes=20)
+        self._point_spacing = point_spacing
+        self._only_complete = only_complete_partitions
+        self._n_complete = int(self._span.seconds / point_spacing.seconds)
+        self._col = col
+
+    def _fit(self, x, y=None):
+        return self
+
+    def _transform(self, data):
+        segments = []
+        indexes = []
+        psn_index_first = data.index.names.index('psn') < data.index.names.index('timestamp')
+        for psn, psn_data in data.groupby('psn'):
+            psn_timestamps = sorted([x[psn_data.index.names.index('timestamp')] for x in psn_data.index])
+            for i, t in enumerate(psn_timestamps):
+                # last element
+                if len(psn_timestamps) == i + 1:
+                    continue
+
+                # non-consecutive timestamps
+                diff = psn_timestamps[i + 1] - t
+                if diff.seconds != 600:
+                    continue
+
+                pair = [t,psn_timestamps[i+1]]
+                segments.append([
+                    x
+                    for x in psn_data[self._col].loc[
+                        [
+                            (psn, t) if psn_index_first else (t, psn)
+                            for t in pair
+                        ]]])
+
+                new_index = [psn]
+                new_index.extend(pair)
+
+                indexes.append(tuple(new_index))
+
+        index_names = ['psn']
+        for i in range(len(max(segments, key=len))):
+            index_names.append('t' + str(i))
+
+        self.transformed = pd.DataFrame(
+            segments,
+            index=pd.MultiIndex.from_tuples(indexes, names=index_names)
+        )
+        return self.transformed
+
+
 class FlattenPartitionedTime(Transformation):
     def __init__(self, exporter=None, *args, **kwargs):
         Transformation.__init__(self, exporter)
@@ -279,10 +323,12 @@ class FlattenPartitionedTime(Transformation):
     def _transform(self, data):
         indexes = []
         entries = []
+        last = None
         for k, v in data.iterrows():
             for i in range(1, len(k)):
                 indexes.append((k[0], k[i]))
                 entries.append(v)
+                last = k[i]
         self.transformed = pd.DataFrame(entries, columns=data.columns,
                                         index=pd.MultiIndex.from_tuples(indexes, names=['psn', 'timestamp']))
         return self.transformed
@@ -453,3 +499,25 @@ class KinkFinderLabels(Transformation):
         all_labels = pd.DataFrame(a, columns=["kink_finder_label"], index=data.index)
         self.transformed = all_labels[all_labels["kink_finder_label"] == 1]
         return self.transformed
+
+
+class HdbscanLabels(Transformation):
+    def __init__(self, min_samples, exporter=None):
+        Transformation.__init__(self,exporter)
+        self._min_samples = min_samples
+
+    def _fit(self, x):
+        return self.cluster.fit(x)
+
+    def _transform(self, data):
+        return_df = pd.DataFrame()
+
+        for psn, psn_data in data.groupby('psn'):
+            min_clust_size = int(len(psn_data) / 70.3) + 1
+            self.cluster = hdbscan.HDBSCAN(min_cluster_size=min_clust_size, min_samples=self._min_samples)
+
+            results = self.cluster.predict(psn_data)
+            psn_data['cluster_label'] = results
+            return_df = return_df.append(psn_data['cluster_label'])
+        return return_df
+
