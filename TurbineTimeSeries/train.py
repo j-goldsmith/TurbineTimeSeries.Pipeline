@@ -30,7 +30,6 @@ from TurbineTimeSeries.exports import (
     pkl_save,
     png_cluster_grid,
     png_cluster_distribution,
-    pkl_save_cluster,
     csv_cluster_stats,
     csv_cluster_distribution_by_psn,
     csv_inertia,
@@ -53,7 +52,7 @@ def _20min_pipeline(exporter):
     ]
     flatten_exports = [
         csv_cluster_distribution_by_psn('model2_20min_cluster_distributions'),
-        csv_package_similarity("model2_12hr_cluster_package_similarity")
+        csv_package_similarity("model2_20min_cluster_package_similarity")
     ]
     kink_finder_exports = [csv_save_by_psn('model2_20min_kinkfinder', only_true=True)]
     return Pipeline([

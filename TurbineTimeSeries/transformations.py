@@ -512,7 +512,7 @@ class HdbscanLabels(Transformation):
         self._custom_psn_params = {48: (140, 80), 53: (20, 40), 55: (70, 90), 59: (150, 10), 64: (190, 40),
                                    68: (30, 10), 69: (20, 20)}
 
-    def _fit(self, x):
+    def _fit(self, x,y):
         return self.cluster.fit(x)
 
     def _transform(self, data):
@@ -545,6 +545,9 @@ class ConsensusEnsemble(Transformation):
 
     def _transform(self, data):
         ensembled = pd.DataFrame(data)
+        if "kink_finder_label_12hr" in ensembled.columns:
+            ensembled.drop("kink_finder_label_12hr",axis=1)
+
         ensembled['consensus_ensemble'] = data.apply(self._true_percent, axis=1)
         ensembled = ensembled['consensus_ensemble'].to_frame()
         return ensembled.loc[ensembled['consensus_ensemble']]
