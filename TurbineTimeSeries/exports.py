@@ -1,9 +1,12 @@
-from matplotlib import pyplot as plt
-import pandas as pd
+
 import os
+import numpy as np
 import pickle
 from datetime import datetime
 
+import pandas as pd
+from sklearn.metrics import pairwise
+from matplotlib import pyplot as plt
 
 class Exporter:
     def __init__(self, config):
@@ -46,18 +49,20 @@ def csv_save(filename, round_to=None):
     return run
 
 
-def csv_save_by_psn(filename, round_to=None):
+def csv_save_by_psn(filename, round_to=None, only_true=False):
     def run(transformation, x, y):
         if round_to is None:
             t = transformation.transformed
         else:
             t = transformation.transformed.round(round_to)
 
+        if only_true is True:
+            t = t.loc[t[t.columns.values[0]] == True]
+
         for psn, psn_data in t.groupby('psn'):
             transformation.exporter.save_df(psn_data, filename + "_psn" + str(psn))
 
     return run
-
 
 
 def csv_cluster_distribution_by_psn(filename):
@@ -80,6 +85,7 @@ def csv_inertia(filename):
             filehandle.write(str(transformation.n_clusters)+","+str(transformation.cluster.inertia_)+"\n")
     return run
 
+
 def csv_cluster_stats(filename):
     def run(transformation, x, y):
         cluster_stats = []
@@ -96,6 +102,47 @@ def csv_cluster_stats(filename):
         result_df = pd.DataFrame(cluster_stats, columns=['cluster_label'] + stdev_cols + means_cols).set_index(
             'cluster_label')
         transformation.exporter.save_df(result_df, filename)
+
+    return run
+
+
+def csv_pca_eigenvalues(filename):
+    def run(transformation, x, y):
+        eig_vector = abs(transformation.pca.components_[:5])
+        df = pd.DataFrame(eig_vector, columns=x.columns)
+        df.index.name = 'eigenvector'
+        transformation.exporter.save_df(df, filename)
+
+    return run
+
+
+def csv_partition_stats(filename):
+    def run(transformation, x, y):
+        partition_size = len(transformation.transformed.index.names) - 1
+        partition_count = len(transformation.transformed.index)
+        data_coverage = partition_count*partition_size / len(x.index)
+
+        transformation.exporter.save_df(pd.DataFrame(
+            data=[(
+                partition_size,
+                partition_count,
+                len(x),
+                data_coverage)
+            ],
+            columns=[
+                'partition_size',
+                'partition_count',
+                'total_data',
+                'data_coverage'
+            ]), filename)
+
+    return run
+def csv_packagemodel_tags(filename, package_model_config):
+    def run(transformation, x, y):
+        df = pd.DataFrame([(x.name, x.subsystem, x.description, x.measurement_type) for x in package_model_config.tags], columns=['field','subsystem','description','measurement_type'])
+        transformation.exporter.save_df(
+            df,
+            filename, index=False)
 
     return run
 
@@ -136,6 +183,25 @@ def csv_pca(filename, n_components=5, round_to=None):
 
     return run
 
+
+def csv_package_similarity(filename):
+    def run(transformation, x, y):
+        flattened = pd.DataFrame(
+            transformation.transformed
+                .reset_index()
+                .groupby(['psn', 'cluster_label'])['timestamp']
+                .count()
+        ).reset_index()
+
+        flattened = flattened.pivot(index='psn', columns='cluster_label', values='timestamp').fillna(0)
+        flattened = flattened.div(flattened.sum(axis=1), axis=0)
+        similarity_matrix = pd.DataFrame(pairwise.pairwise_distances(flattened, metric='euclidean'),
+                                                columns=flattened.index, index=flattened.index)
+        transformation.exporter.save_df(
+            similarity_matrix,
+            filename)
+
+    return run
 
 def csv_psn(filename):
     def run(transformation, x, y):

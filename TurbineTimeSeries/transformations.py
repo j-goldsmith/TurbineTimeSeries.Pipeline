@@ -8,6 +8,9 @@ from datetime import timedelta, datetime
 from itertools import groupby
 import hdbscan
 from TurbineTimeSeries.profiler import Profiler
+from sklearn.pipeline import FeatureUnion, _fit_transform_one
+from sklearn.externals.joblib import Parallel, delayed
+import pickle
 
 
 class Transformation(ABC):
@@ -288,7 +291,7 @@ class PartitionBy20min(Transformation):
                 if diff.seconds != 600:
                     continue
 
-                pair = [t,psn_timestamps[i+1]]
+                pair = [t, psn_timestamps[i + 1]]
                 segments.append([
                     x
                     for x in psn_data[self._col].loc[
@@ -326,11 +329,11 @@ class FlattenPartitionedTime(Transformation):
         last = None
         for k, v in data.iterrows():
             for i in range(1, len(k)):
-                indexes.append((k[0], k[i]))
+                indexes.append((k[i], k[0]))
                 entries.append(v)
                 last = k[i]
         self.transformed = pd.DataFrame(entries, columns=data.columns,
-                                        index=pd.MultiIndex.from_tuples(indexes, names=['psn', 'timestamp']))
+                                        index=pd.MultiIndex.from_tuples(indexes, names=['timestamp', 'psn']))
         return self.transformed
 
 
@@ -350,8 +353,8 @@ class KMeansLabels(Transformation):
 
 
 class RoundTimestampIndex(Transformation):
-    def __init__(self, to='10min'):
-        Transformation.__init__(self)
+    def __init__(self, to='10min', exporter=None):
+        Transformation.__init__(self, exporter=exporter)
         self._to = to
 
     def _fit(self, x, y=None):
@@ -426,7 +429,7 @@ class StepSize(Transformation):
 
         finaldf = finaldf.rename(columns={x: x + '_stepsize_transient_label' for x in cols})
 
-        return finaldf[finaldf["pca_eig0_stepsize_transient_label"] == True]
+        return finaldf
 
 
 class PowerStepSize(Transformation):
@@ -449,6 +452,7 @@ class PowerStepSize(Transformation):
 
             finaldf = finaldf.append(flags.to_frame())
         # self.transformed = finaldf[finaldf["perf_pow"] == True]
+        finaldf.columns = [self._power_col + "_step_label"]
         return finaldf
 
 
@@ -474,11 +478,12 @@ class EngineShutdownLabels(Transformation):
 
 class KinkFinderLabels(Transformation):
 
-    def __init__(self, n_clusters, cluster_transformation, threshold=.4, exporter=None):
+    def __init__(self, n_clusters, cluster_transformation, label_name='kink_finder_label', threshold=.4, exporter=None):
         Transformation.__init__(self, exporter=exporter)
         self._threshold = threshold
         self._n_clusters = n_clusters
         self._cluster_transformation = cluster_transformation
+        self._label_name = label_name
 
     def _fit(self, x, y=None):
         return self
@@ -496,28 +501,62 @@ class KinkFinderLabels(Transformation):
     def _transform(self, data):
         kinked = self._cluster_transient_labels()
         a = [kinked[d] for d in data["cluster_label"]]
-        all_labels = pd.DataFrame(a, columns=["kink_finder_label"], index=data.index)
-        self.transformed = all_labels[all_labels["kink_finder_label"] == 1]
+        all_labels = pd.DataFrame(a, columns=[self._label_name], index=data.index)
+        self.transformed = (all_labels.groupby(['psn', 'timestamp'])[self._label_name].sum() > 0).to_frame()
         return self.transformed
 
 
 class HdbscanLabels(Transformation):
-    def __init__(self, min_samples, exporter=None):
-        Transformation.__init__(self,exporter)
-        self._min_samples = min_samples
+    def __init__(self, exporter=None):
+        Transformation.__init__(self, exporter)
+        self._custom_psn_params = {48: (140, 80), 53: (20, 40), 55: (70, 90), 59: (150, 10), 64: (190, 40),
+                                   68: (30, 10), 69: (20, 20)}
 
     def _fit(self, x):
         return self.cluster.fit(x)
 
     def _transform(self, data):
+        """
+        data is a dataframe, index (psn,timestamp) and columns (pca_eig0, pca_eig1...)
+        """
         return_df = pd.DataFrame()
 
         for psn, psn_data in data.groupby('psn'):
-            min_clust_size = int(len(psn_data) / 70.3) + 1
-            self.cluster = hdbscan.HDBSCAN(min_cluster_size=min_clust_size, min_samples=self._min_samples)
+            min_clust_size = self._custom_psn_params[psn][0] if psn in self._custom_psn_params.keys() else 20
+            min_samples = self._custom_psn_params[psn][1] if psn in self._custom_psn_params.keys() else 80
+            self.cluster = hdbscan.HDBSCAN(min_cluster_size=min_clust_size, min_samples=min_samples)
 
-            results = self.cluster.predict(psn_data)
-            psn_data['cluster_label'] = results
-            return_df = return_df.append(psn_data['cluster_label'])
+            results = self.cluster.fit_predict(psn_data)
+            psn_data['hdbscan_label'] = results
+
+            return_df = return_df.append(psn_data[psn_data['hdbscan_label'] == -1]["hdbscan_label"])
         return return_df
 
+
+class ConsensusEnsemble(Transformation):
+    def __init__(self, exporter=None):
+        Transformation.__init__(self, exporter)
+
+    def _true_percent(self, row):
+        t = len([x for x in row if x is True])
+        c = len(row)
+
+        return (t / c) > .5
+
+    def _transform(self, data):
+        ensembled = pd.DataFrame(data)
+        ensembled['consensus_ensemble'] = data.apply(self._true_percent, axis=1)
+        ensembled = ensembled['consensus_ensemble'].to_frame()
+        return ensembled.loc[ensembled['consensus_ensemble']]
+
+
+class TransformationUnion(FeatureUnion):
+    def fit_transform(self, X, y=None, **fit_params):
+        self._validate_transformers()
+        result = Parallel(n_jobs=self.n_jobs)(
+            delayed(_fit_transform_one)(trans, weight, X, y,
+                                        **fit_params)
+            for name, trans, weight in self._iter())
+
+        Xs, transformers = zip(*result)
+        return pd.concat([d.reset_index().set_index(['psn', 'timestamp']) for d in Xs], axis=1)
