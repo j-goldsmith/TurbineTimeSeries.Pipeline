@@ -30,43 +30,43 @@ class Exporter:
         return pickle.load(open(os.path.join(self.export_root, name), 'rb'))
 
 
-def csv_cleaned_data(transformation, x, y):
-    transformation.exporter.save_df(x, "cleaned_data")
+class csv_save:
+    def __init__(self, filename, round_to=None):
+        self._filename = filename
+        self._round_to = round_to
 
-
-def csv_reduced_data(transformation, x, y):
-    transformation.exporter.save_df(x, "cleaned_data")
-
-
-def csv_save(filename, round_to=None):
-    def run(transformation, x, y):
-        if round_to is None:
+    def run(self, transformation, x, y):
+        if transformation.round_to is None:
             t = transformation.transformed
         else:
-            t = transformation.transformed.round(round_to)
-        transformation.exporter.save_df(t, filename)
-
-    return run
+            t = transformation.transformed.round(self._round_to)
+        transformation.exporter.save_df(t, self._filename)
 
 
-def csv_save_by_psn(filename, round_to=None, only_true=False):
-    def run(transformation, x, y):
-        if round_to is None:
+class csv_save_by_psn:
+    def __init__(self, filename, round_to=None, only_true=False):
+        self._filename = filename
+        self._round_to = round_to
+        self._only_true = only_true
+
+    def run(self,transformation, x, y):
+        if self._round_to is None:
             t = transformation.transformed
         else:
-            t = transformation.transformed.round(round_to)
+            t = transformation.transformed.round(self._round_to)
 
-        if only_true is True:
+        if self._only_true is True:
             t = t.loc[t[t.columns.values[0]] == True]
 
         for psn, psn_data in t.groupby('psn'):
-            transformation.exporter.save_df(psn_data, filename + "_psn" + str(psn))
-
-    return run
+            transformation.exporter.save_df(psn_data, self._filename + "_psn" + str(psn))
 
 
-def csv_cluster_distribution_by_psn(filename):
-    def run(transformation, x, y):
+class csv_cluster_distribution_by_psn:
+    def __init__(self,filename):
+        self._filename = filename
+
+    def run(self, transformation, x, y):
         cluster_counts = transformation.transformed.groupby(['psn', 'cluster_label']).size()
 
         cluster_pcts = cluster_counts.groupby(level=0).apply(lambda x: x / x.sum()).to_frame(name='percent')
@@ -74,20 +74,23 @@ def csv_cluster_distribution_by_psn(filename):
         cluster_stats = cluster_pcts.join(cluster_minutes)
 
         for psn, psn_data in cluster_stats.groupby('psn'):
-            transformation.exporter.save_df(psn_data, filename + "_psn" + str(psn))
-
-    return run
+            transformation.exporter.save_df(psn_data, self._filename + "_psn" + str(psn))
 
 
-def csv_inertia(filename):
-    def run(transformation,x,y):
-        with open(os.path.join(transformation.exporter.export_dir,filename+".csv"), 'a+') as filehandle:
+class csv_inertia:
+    def __init__(self,filename):
+        self._filename = filename
+
+    def run(self,transformation,x,y):
+        with open(os.path.join(transformation.exporter.export_dir,self._filename+".csv"), 'a+') as filehandle:
             filehandle.write(str(transformation.n_clusters)+","+str(transformation.cluster.inertia_)+"\n")
-    return run
 
 
-def csv_cluster_stats(filename):
-    def run(transformation, x, y):
+class csv_cluster_stats:
+    def __init__(self,filename):
+        self._filename = filename
+
+    def run(self,transformation, x, y):
         cluster_stats = []
         stdev_cols = [str(c) + '_stdev' for c in x.columns]
         means_cols = [str(c) + '_mean' for c in x.columns]
@@ -101,91 +104,116 @@ def csv_cluster_stats(filename):
 
         result_df = pd.DataFrame(cluster_stats, columns=['cluster_label'] + stdev_cols + means_cols).set_index(
             'cluster_label')
-        transformation.exporter.save_df(result_df, filename)
-
-    return run
+        transformation.exporter.save_df(result_df, self._filename)
 
 
-def csv_pca_eigenvalues(filename):
-    def run(transformation, x, y):
+class csv_pca_eigenvalues:
+    def __init__(self,filename):
+        self._filename = filename
+
+    def run(self,transformation, x, y):
         eig_vector = abs(transformation.pca.components_[:5])
         df = pd.DataFrame(eig_vector, columns=x.columns)
         df.index.name = 'eigenvector'
-        transformation.exporter.save_df(df, filename)
-
-    return run
+        transformation.exporter.save_df(df, self._filename)
 
 
-def csv_partition_stats(filename):
-    def run(transformation, x, y):
+class csv_partition_stats:
+    def __init__(self,filename):
+        self._filename = filename
+
+    def run(self,transformation, x, y):
         partition_size = len(transformation.transformed.index.names) - 1
         partition_count = len(transformation.transformed.index)
-        data_coverage = partition_count*partition_size / len(x.index)
+
+        indexes = []
+        entries = []
+        last = None
+        for k, v in transformation.transformed.iterrows():
+            for i in range(1, len(k)):
+                if last != k[i]:
+                    indexes.append(k[i])
+                last = k[i]
+        data_coverage = len(indexes) / len(x.index)
 
         transformation.exporter.save_df(pd.DataFrame(
             data=[(
                 partition_size,
                 partition_count,
-                len(x),
+                len(indexes),
+                len(x.index),
                 data_coverage)
             ],
             columns=[
                 'partition_size',
                 'partition_count',
-                'total_data',
+                'partitioned_timestamp_count',
+                'full_set_timestamp_count',
                 'data_coverage'
-            ]), filename)
+            ]), self._filename)
 
-    return run
-def csv_packagemodel_tags(filename, package_model_config):
-    def run(transformation, x, y):
-        df = pd.DataFrame([(x.name, x.subsystem, x.description, x.measurement_type) for x in package_model_config.tags], columns=['field','subsystem','description','measurement_type'])
+
+class csv_packagemodel_tags:
+    def __init__(self,filename, package_model_config):
+        self._filename = filename
+        self._package_model_config = package_model_config
+
+    def run(self, transformation, x, y):
+        df = pd.DataFrame([(x.name, x.subsystem, x.description, x.measurement_type) for x in self._package_model_config.tags], columns=['field','subsystem','description','measurement_type'])
         transformation.exporter.save_df(
             df,
-            filename, index=False)
-
-    return run
+            self._filename, index=False)
 
 
-def csv_fields(filename):
-    def run(transformation, x, y):
+class csv_fields:
+    def __init__(self,filename):
+        self._filename = filename
+
+    def run(self,transformation, x, y):
         transformation.exporter.save_df(
             pd.DataFrame(transformation.transformed.columns.values, columns=['field']).sort_values(by='field'),
-            filename, index=False)
-
-    return run
+            self._filename, index=False)
 
 
-def csv_pca_by_psn(filename, n_components=5, round_to=None):
-    def run(transformation, x, y):
-        t = transformation.transformed.loc[:, ['pca_eig' + str(i) for i in range(n_components)]]
+class csv_pca_by_psn:
+    def __init__(self, filename, n_components=5, round_to=None):
+        self._filename = filename
+        self._n_components = n_components
+        self._round_to = round_to
 
-        if isinstance(round_to, int):
-            t = t.round(round_to)
+    def run(self,transformation, x, y):
+        t = transformation.transformed.loc[:, ['pca_eig' + str(i) for i in range(self._n_components)]]
+
+        if isinstance(self._round_to, int):
+            t = t.round(self._round_to)
 
         for psn, psn_data in t.groupby('psn'):
-            transformation.exporter.save_df(psn_data, filename + "_psn" + str(psn))
-
-    return run
+            transformation.exporter.save_df(psn_data, self._filename + "_psn" + str(psn))
 
 
-def csv_pca(filename, n_components=5, round_to=None):
-    def run(transformation, x, y):
-        t = transformation.transformed.loc[:, ['pca_eig' + str(i) for i in range(n_components)]]
+class csv_pca:
+    def __init__(self, filename, n_components=5, round_to=None):
+        self._filename = filename
+        self._n_components = n_components
+        self._round_to = round_to
 
-        if isinstance(round_to, int):
-            t = t.round(round_to)
+    def run(self,transformation, x, y):
+        t = transformation.transformed.loc[:, ['pca_eig' + str(i) for i in range(self._n_components)]]
+
+        if isinstance(self._round_to, int):
+            t = t.round(self._round_to)
 
         transformation.exporter.save_df(
             t,
-            filename,
+            self._filename,
             index=True)
 
-    return run
 
+class csv_package_similarity:
+    def __init__(self,filename):
+        self._filename = filename
 
-def csv_package_similarity(filename):
-    def run(transformation, x, y):
+    def run(self,transformation, x, y):
         flattened = pd.DataFrame(
             transformation.transformed
                 .reset_index()
@@ -199,33 +227,40 @@ def csv_package_similarity(filename):
                                                 columns=flattened.index, index=flattened.index)
         transformation.exporter.save_df(
             similarity_matrix,
-            filename)
+            self._filename)
 
-    return run
 
-def csv_psn(filename):
-    def run(transformation, x, y):
+
+
+class csv_psn:
+    def __init__(self,filename):
+        self._filename = filename
+
+    def run(self,transformation, x, y):
         transformation.exporter.save_df(
             pd.DataFrame(transformation.transformed.reset_index()['psn'].unique(), columns=['psn']).sort_values(
                 by='psn'),
-            filename,
+            self._filename,
             index=False)
 
-    return run
 
 
-def pkl_save(filename):
-    def run(transformation, x, y):
-        transformation.exporter.save_pkl(transformation.transformed, filename)
+class pkl_save:
+    def __init__(self,filename):
+        self._filename = filename
 
-    return run
+    def run(self,transformation, x, y):
+        transformation.exporter.save_pkl(transformation.transformed, self._filename)
 
 
-def pkl_save_cluster(filename):
-    def run(transformation, x, y):
-        transformation.exporter.save_pkl(transformation.cluster, filename)
 
-    return run
+class pkl_save_cluster:
+    def __init__(self,filename):
+        self._filename = filename
+    def run(self,transformation, x, y):
+        transformation.exporter.save_pkl(transformation.cluster, self._filename)
+
+
 
 
 def png_pca_variance_explained_curve(transformation, x, y):

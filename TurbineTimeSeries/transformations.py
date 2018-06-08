@@ -35,7 +35,7 @@ class Transformation(ABC):
 
     def _call_hook(self, callbacks, x=None, y=None):
         for f in callbacks:
-            f(self, x, y)
+            f.run(self, x, y)
 
     def before_fit(self, funcs):
         self._set_hook(self._before_fit_funcs, funcs)
@@ -512,9 +512,6 @@ class HdbscanLabels(Transformation):
         self._custom_psn_params = {48: (140, 80), 53: (20, 40), 55: (70, 90), 59: (150, 10), 64: (190, 40),
                                    68: (30, 10), 69: (20, 20)}
 
-    def _fit(self, x,y):
-        return self.cluster.fit(x)
-
     def _transform(self, data):
         """
         data is a dataframe, index (psn,timestamp) and columns (pca_eig0, pca_eig1...)
@@ -529,7 +526,8 @@ class HdbscanLabels(Transformation):
             results = self.cluster.fit_predict(psn_data)
             psn_data['hdbscan_label'] = results
 
-            return_df = return_df.append(psn_data[psn_data['hdbscan_label'] == -1]["hdbscan_label"])
+            return_df = return_df.append(psn_data[psn_data['hdbscan_label'] == -1])
+        print(return_df)
         return return_df
 
 
