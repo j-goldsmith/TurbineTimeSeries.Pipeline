@@ -36,7 +36,7 @@ class csv_save:
         self._round_to = round_to
 
     def run(self, transformation, x, y):
-        if hasattr(transformation, 'round_to')& (transformation.round_to is None):
+        if (self._round_to is None):
             t = transformation.transformed
         else:
             t = transformation.transformed.round(self._round_to)
