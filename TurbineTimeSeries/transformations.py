@@ -529,7 +529,7 @@ class HdbscanLabels(Transformation):
         self.transformed = pd.DataFrame(return_df)
         self.transformed.loc[self.transformed['hdbscan_label'] == -1,'hdbscan_label'] = True
         self.transformed.loc[self.transformed['hdbscan_label'] != -1, 'hdbscan_label'] = False
-        return self.transformed['hdbscan_label']
+        return self.transformed['hdbscan_label'].to_frame()
 
 
 class ConsensusEnsemble(Transformation):
