@@ -101,6 +101,65 @@ def _12hr_pipeline(exporter):
             exporter=exporter).after_transform(kink_finder_exports))
     ])
 
+def _30min_pipeline(exporter):
+    n_clusters = 30
+    kmeans_exports = [
+        csv_cluster_stats('model2_30min_partition_cluster_stats'),
+        # pkl_save('model2_20min_partition_clusters'),
+        # pkl_save_cluster('model2_30min_partition_cluster_obj'),
+        # png_cluster_grid(package_model_config),
+        # png_cluster_distribution(package_model_config)
+    ]
+    flatten_exports = [
+        csv_cluster_distribution_by_psn('model2_30min_cluster_distributions'),
+        csv_package_similarity("model2_30min_cluster_package_similarity")
+    ]
+    kink_finder_exports = [csv_save_by_psn('model2_30min_kinkfinder', only_true=True)]
+    kmeans = KMeansLabels(exporter=exporter, n_clusters=n_clusters, n_jobs=2)
+    return Pipeline([
+        ('Partition', PartitionByTime(
+            col='pca_eig0',
+            partition_span=timedelta(minutes=30),
+            exporter=exporter).after_transform([csv_partition_stats('model2_30min_partition_stats')])
+         ),
+        ('KMeans', kmeans.after_transform(kmeans_exports)),
+        ('Flatten', FlattenPartitionedTime(exporter=exporter).after_transform(flatten_exports)),
+        ('KinkFinder', KinkFinderLabels(
+            label_name="kink_finder_label_30min",
+            n_clusters=n_clusters,
+            cluster_transformation=kmeans,
+            exporter=exporter).after_transform(kink_finder_exports))
+    ])
+
+def _60min_pipeline(exporter):
+    n_clusters = 40
+    kmeans_exports = [
+        csv_cluster_stats('model2_60min_partition_cluster_stats'),
+        # pkl_save('model2_20min_partition_clusters'),
+        # pkl_save_cluster('model2_30min_partition_cluster_obj'),
+        # png_cluster_grid(package_model_config),
+        # png_cluster_distribution(package_model_config)
+    ]
+    flatten_exports = [
+        csv_cluster_distribution_by_psn('model2_60min_cluster_distributions'),
+        csv_package_similarity("model2_60min_cluster_package_similarity")
+    ]
+    kink_finder_exports = [csv_save_by_psn('model2_60min_kinkfinder', only_true=True)]
+    kmeans = KMeansLabels(exporter=exporter, n_clusters=n_clusters, n_jobs=2)
+    return Pipeline([
+        ('Partition', PartitionByTime(
+            col='pca_eig0',
+            partition_span=timedelta(minutes=60),
+            exporter=exporter).after_transform([csv_partition_stats('model2_60min_partition_stats')])
+         ),
+        ('KMeans', kmeans.after_transform(kmeans_exports)),
+        ('Flatten', FlattenPartitionedTime(exporter=exporter).after_transform(flatten_exports)),
+        ('KinkFinder', KinkFinderLabels(
+            label_name="kink_finder_label_60min",
+            n_clusters=n_clusters,
+            cluster_transformation=kmeans,
+            exporter=exporter).after_transform(kink_finder_exports))
+    ])
 
 def _preprocess_pipeline(package_model_config, exporter):
     preprocessed_exports = [
