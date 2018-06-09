@@ -45,7 +45,7 @@ def _20min_pipeline(exporter):
     kmeans_20min = KMeansLabels(exporter=exporter, n_clusters=n_clusters_20min, n_jobs=2)
     kmeans_exports = [
         csv_cluster_stats('model2_20min_partition_cluster_stats'),
-        csv_save_by_psn('model2_20min_kmeans_labels')
+        csv_save_by_psn('model2_20min_kmeans_labels',only_true=True)
     ]
     flatten_exports = [
         csv_cluster_distribution_by_psn('model2_20min_cluster_distributions'),
@@ -75,7 +75,7 @@ def _12hr_pipeline(exporter):
     n_clusters_12hr = 100
     kmeans_exports = [
         csv_cluster_stats('model2_12hr_partition_cluster_stats'),
-        csv_save_by_psn('model2_12hr_kmeans_labels')
+        csv_save_by_psn('model2_12hr_kmeans_labels', only_true=True)
         # pkl_save('model2_20min_partition_clusters'),
         # pkl_save_cluster('model2_30min_partition_cluster_obj'),
         # png_cluster_grid(package_model_config),
