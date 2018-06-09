@@ -45,16 +45,16 @@ def _20min_pipeline(exporter):
     kmeans_20min = KMeansLabels(exporter=exporter, n_clusters=n_clusters_20min, n_jobs=2)
     kmeans_exports = [
         csv_cluster_stats('model2_20min_partition_cluster_stats'),
-        # pkl_save('model2_20min_partition_clusters'),
-        # pkl_save_cluster('model2_30min_partition_cluster_obj'),
-        # png_cluster_grid(package_model_config),
-        # png_cluster_distribution(package_model_config)
+        csv_save_by_psn('model2_20min_kmeans_labels')
     ]
     flatten_exports = [
         csv_cluster_distribution_by_psn('model2_20min_cluster_distributions'),
         csv_package_similarity("model2_20min_cluster_package_similarity")
     ]
-    kink_finder_exports = [csv_save_by_psn('model2_20min_kinkfinder', only_true=True)]
+    kink_finder_exports = [
+        csv_save_by_psn('model2_20min_kinkfinder', only_true=True),
+        csv_save('model2_20min_kinkfinder')
+    ]
     return Pipeline([
         ('Partition', PartitionBy20min(
             col='pca_eig0',
@@ -75,6 +75,7 @@ def _12hr_pipeline(exporter):
     n_clusters_12hr = 100
     kmeans_exports = [
         csv_cluster_stats('model2_12hr_partition_cluster_stats'),
+        csv_save_by_psn('model2_12hr_kmeans_labels')
         # pkl_save('model2_20min_partition_clusters'),
         # pkl_save_cluster('model2_30min_partition_cluster_obj'),
         # png_cluster_grid(package_model_config),
@@ -84,7 +85,10 @@ def _12hr_pipeline(exporter):
         csv_cluster_distribution_by_psn('model2_12hr_cluster_distributions'),
         csv_package_similarity("model2_12hr_cluster_package_similarity")
     ]
-    kink_finder_exports = [csv_save_by_psn('model2_12hr_kinkfinder', only_true=True)]
+    kink_finder_exports = [
+        csv_save_by_psn('model2_12hr_kinkfinder', only_true=True),
+        csv_save('model2_12hr_kinkfinder')
+    ]
     kmeans_12hr = KMeansLabels(exporter=exporter, n_clusters=n_clusters_12hr, n_jobs=2)
     return Pipeline([
         ('Partition', PartitionByTime(
@@ -100,6 +104,7 @@ def _12hr_pipeline(exporter):
             cluster_transformation=kmeans_12hr,
             exporter=exporter).after_transform(kink_finder_exports))
     ])
+
 
 def _30min_pipeline(exporter):
     n_clusters = 30
@@ -131,6 +136,7 @@ def _30min_pipeline(exporter):
             exporter=exporter).after_transform(kink_finder_exports))
     ])
 
+
 def _60min_pipeline(exporter):
     n_clusters = 40
     kmeans_exports = [
@@ -161,11 +167,13 @@ def _60min_pipeline(exporter):
             exporter=exporter).after_transform(kink_finder_exports))
     ])
 
+
 def _preprocess_pipeline(package_model_config, exporter):
     preprocessed_exports = [
         csv_save_by_psn('model2_preprocessed_data', round_to=3),
         csv_psn('model2_psn'),
-        csv_fields('model2_fields')
+        csv_fields('model2_fields'),
+        csv_packagemodel_tags('model2_description', package_model_config)
     ]
     return Pipeline([
         ('DropCols', DropCols(package_model_config.ignored)),
@@ -182,10 +190,12 @@ def _analysis_pipeline(exporter):
         csv_pca_eigenvalues('model2_eigenvalues')
     ]
     hdbscan_exports = [
-        csv_save_by_psn("model2_hdbscan", only_true=True)
+        csv_save_by_psn("model2_hdbscan", only_true=True),
+        csv_save("model2_hdbscan")
     ]
     stepsize_exports = [
-        csv_save_by_psn("model2_stepsize", only_true=True)
+        csv_save_by_psn("model2_stepsize", only_true=True),
+        csv_save("model2_stepsize")
     ]
     return Pipeline([
         ('StandardScaler', StandardScaler(exporter=exporter)),
@@ -208,7 +218,10 @@ def final_pipeline(package_model_config, data_query, exporter):
             ('PowerJump', PowerStepSize(exporter=exporter).after_transform([csv_save_by_psn('model2_powerstepsize', only_true=True)])),
             ("PCAAnalysis", _analysis_pipeline(exporter))
         ])),
-        ("Ensemble", ConsensusEnsemble(exporter=exporter).after_transform([csv_save_by_psn('model2_ensemble', only_true=True)]))
+        ("Ensemble", ConsensusEnsemble(exporter=exporter).after_transform([
+            csv_save_by_psn('model2_ensemble', only_true=True),
+            csv_save('model2_ensemble')
+        ]))
     ])
 
     def exec():
@@ -295,7 +308,7 @@ def cluster_distribution(package_model_config, data_query, exporter, verbose=Fal
             ])
          ),
         ('KMeans', kmeans_transformation.after_transform([
-            csv_cluster_stats_by_psn('model2_30min_partition_cluster_stats')
+            # csv_cluster_stats_by_psn('model2_30min_partition_cluster_stats')
             # pkl_save('model2_30min_partition_clusters'),
             # pkl_save_cluster('model2_30min_partition_cluster_obj'),
             # png_cluster_grid(package_model_config),

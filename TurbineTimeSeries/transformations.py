@@ -502,7 +502,7 @@ class KinkFinderLabels(Transformation):
         kinked = self._cluster_transient_labels()
         a = [kinked[d] for d in data["cluster_label"]]
         all_labels = pd.DataFrame(a, columns=[self._label_name], index=data.index)
-        self.transformed = (all_labels.groupby(['psn', 'timestamp'])[self._label_name].sum() > 0).to_frame()
+        self.transformed = (all_labels.groupby(['psn', 'timestamp'])[self._label_name]).to_frame()
         return self.transformed
 
 
@@ -526,8 +526,9 @@ class HdbscanLabels(Transformation):
             results = self.cluster.fit_predict(psn_data[['pca_eig'+str(i) for i in range(20)]])
 
             return_df = return_df.append(pd.DataFrame(results, index=psn_data.index,columns=['hdbscan_label']))
-        self.transformed =pd.DataFrame(return_df[return_df['hdbscan_label'] == -1])
+        self.transformed = pd.DataFrame(return_df)
         self.transformed.loc[self.transformed['hdbscan_label'] == -1,'hdbscan_label'] = True
+        self.transformed.loc[self.transformed['hdbscan_label'] != -1, 'hdbscan_label'] = False
         return self.transformed
 
 
