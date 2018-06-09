@@ -502,7 +502,7 @@ class KinkFinderLabels(Transformation):
         kinked = self._cluster_transient_labels()
         a = [kinked[d] for d in data["cluster_label"]]
         all_labels = pd.DataFrame(a, columns=[self._label_name], index=data.index)
-        self.transformed = (all_labels.groupby(['psn', 'timestamp'])[self._label_name]).to_frame()
+        self.transformed = (all_labels.groupby(['psn', 'timestamp'])[self._label_name].sum() > 0).to_frame()
         return self.transformed
 
 

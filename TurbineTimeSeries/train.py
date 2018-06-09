@@ -215,7 +215,10 @@ def final_pipeline(package_model_config, data_query, exporter):
     pipeline = Pipeline([
         ('Preprocess', _preprocess_pipeline(package_model_config, exporter)),
         ("AllLabels", TransformationUnion([
-            ('PowerJump', PowerStepSize(exporter=exporter).after_transform([csv_save_by_psn('model2_powerstepsize', only_true=True)])),
+            ('PowerJump', PowerStepSize(exporter=exporter).after_transform([
+                csv_save_by_psn('model2_powerstepsize', only_true=True),
+                csv_save('model2_powerstepsize')
+            ])),
             ("PCAAnalysis", _analysis_pipeline(exporter))
         ])),
         ("Ensemble", ConsensusEnsemble(exporter=exporter).after_transform([
