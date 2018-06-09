@@ -44,12 +44,12 @@ def _20min_pipeline(exporter):
     n_clusters_20min = 25
     kmeans_20min = KMeansLabels(exporter=exporter, n_clusters=n_clusters_20min, n_jobs=2)
     kmeans_exports = [
-        csv_cluster_stats('model2_20min_partition_cluster_stats'),
-        csv_save_by_psn('model2_20min_kmeans_labels',only_true=True)
+        csv_cluster_stats('model2_20min_partition_cluster_stats')
     ]
     flatten_exports = [
         csv_cluster_distribution_by_psn('model2_20min_cluster_distributions'),
-        csv_package_similarity("model2_20min_cluster_package_similarity")
+        csv_package_similarity("model2_20min_cluster_package_similarity"),
+        csv_save_by_psn('model2_20min_kmeans_labels')
     ]
     kink_finder_exports = [
         csv_save_by_psn('model2_20min_kinkfinder', only_true=True),
@@ -74,8 +74,7 @@ def _20min_pipeline(exporter):
 def _12hr_pipeline(exporter):
     n_clusters_12hr = 100
     kmeans_exports = [
-        csv_cluster_stats('model2_12hr_partition_cluster_stats'),
-        csv_save_by_psn('model2_12hr_kmeans_labels', only_true=True)
+        csv_cluster_stats('model2_12hr_partition_cluster_stats')
         # pkl_save('model2_20min_partition_clusters'),
         # pkl_save_cluster('model2_30min_partition_cluster_obj'),
         # png_cluster_grid(package_model_config),
@@ -83,7 +82,8 @@ def _12hr_pipeline(exporter):
     ]
     flatten_exports = [
         csv_cluster_distribution_by_psn('model2_12hr_cluster_distributions'),
-        csv_package_similarity("model2_12hr_cluster_package_similarity")
+        csv_package_similarity("model2_12hr_cluster_package_similarity"),
+        csv_save_by_psn('model2_12hr_kmeans_labels', only_true=True)
     ]
     kink_finder_exports = [
         csv_save_by_psn('model2_12hr_kinkfinder', only_true=True),
