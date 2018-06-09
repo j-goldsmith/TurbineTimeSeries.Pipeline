@@ -58,6 +58,7 @@ class csv_save_by_psn:
         if self._only_true is True:
             t = t.loc[t[t.columns.values[0]] == True]
 
+        print(t)
         for psn, psn_data in t.groupby('psn'):
             transformation.exporter.save_df(psn_data, self._filename + "_psn" + str(psn))
 

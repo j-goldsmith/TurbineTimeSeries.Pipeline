@@ -523,12 +523,12 @@ class HdbscanLabels(Transformation):
             min_samples = self._custom_psn_params[psn][1] if psn in self._custom_psn_params.keys() else 80
             self.cluster = hdbscan.HDBSCAN(min_cluster_size=min_clust_size, min_samples=min_samples)
 
-            results = self.cluster.fit_predict(psn_data)
-            psn_data['hdbscan_label'] = results
+            results = self.cluster.fit_predict(psn_data[['pca_eig'+str(i) for i in range(20)]])
 
-            return_df = return_df.append(psn_data[psn_data['hdbscan_label'] == -1])
-        print(return_df)
-        return return_df
+            return_df = return_df.append(pd.DataFrame(results, index=psn_data.index,columns=['hdbscan_label']))
+        self.transformed =pd.DataFrame(return_df[return_df['hdbscan_label'] == -1])
+        self.transformed.loc[self.transformed['hdbscan_label'] == -1,'hdbscan_label'] = True
+        return self.transformed
 
 
 class ConsensusEnsemble(Transformation):

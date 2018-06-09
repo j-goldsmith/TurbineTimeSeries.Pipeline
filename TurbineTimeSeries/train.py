@@ -170,7 +170,7 @@ def cluster_20min(package_model_config, data_query, exporter, verbose=False):
         # png_pca_eigenvalues_as_tags
     ]
 
-    kmeans_transformation = KMeansLabels(exporter=exporter, n_clusters=100, n_jobs=2)
+    kmeans_transformation = KMeansLabels(exporter=exporter, n_clusters=25, n_jobs=2)
 
     pipeline = Pipeline([
         ('DropCols', DropCols(package_model_config.ignored)),
@@ -178,27 +178,24 @@ def cluster_20min(package_model_config, data_query, exporter, verbose=False):
         # ('DropSparsePackages',DropSparsePackages(1000)),
         ('DropNA', DropNA()),
         ('RoundTimeStamps', RoundTimestampIndex(to='10min')),
-        ('StandardScaler', StandardScaler(exporter=exporter).after_transform(preprocessed_exports)),
-        ('FleetwidePCA', PCA(exporter=exporter).after_transform(pca_exports)),
+        ('StandardScaler', StandardScaler(exporter=exporter)),
+        ('FleetwidePCA', PCA(exporter=exporter)),
         ('Partition', PartitionBy20min(
             col='pca_eig0',
-            exporter=exporter).after_transform(
-            [
-                pkl_save('model2_20min_partitions')
-            ])
+            exporter=exporter)
          ),
         ('KMeans', kmeans_transformation.after_transform([
             csv_cluster_stats('model2_20min_partition_cluster_stats'),
-            pkl_save('model2_20min_partition_clusters'),
+            #pkl_save('model2_20min_partition_clusters'),
             # pkl_save_cluster('model2_30min_partition_cluster_obj'),
-            png_cluster_grid(package_model_config),
-            png_cluster_distribution(package_model_config)
+            #png_cluster_grid(package_model_config),
+            #png_cluster_distribution(package_model_config)
         ])),
         ('Flatten', FlattenPartitionedTime(exporter=exporter).after_transform([
             csv_cluster_distribution_by_psn('model2_20min_cluster_distributions')
         ])),
         ('KinkFinder', KinkFinderLabels(
-            n_clusters=100,
+            n_clusters=25,
             cluster_transformation=kmeans_transformation,
             exporter=exporter)
          .after_transform([csv_save_by_psn('model2_20min_kinkfinder')]))
